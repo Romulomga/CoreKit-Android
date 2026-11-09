@@ -1,0 +1,27 @@
+// Igual ao do DSKit-Android, com o ktlint 1.x (ktlint-cli).
+configurations {
+    ktlint
+}
+
+dependencies {
+    ktlint "com.pinterest.ktlint:ktlint-cli:1.8.0"
+}
+
+tasks.register("ktlint", JavaExec) {
+    group = "verification"
+    description = "Check Kotlin code style."
+    classpath = configurations.ktlint
+    mainClass.set("com.pinterest.ktlint.Main")
+    args "src/**/*.kt"
+}
+
+tasks.named("check") { dependsOn("ktlint") }
+
+tasks.register("ktlintFormat", JavaExec) {
+    group = "formatting"
+    description = "Fix Kotlin code style deviations."
+    classpath = configurations.ktlint
+    mainClass.set("com.pinterest.ktlint.Main")
+    args "-F", "src/**/*.kt"
+    jvmArgs "--add-opens=java.base/java.lang=ALL-UNNAMED"
+}
