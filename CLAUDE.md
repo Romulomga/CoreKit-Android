@@ -16,9 +16,12 @@ here. CoreKit does not depend on DSKit.
   on iOS the reference for patterns stays MagicPick.
 - **minSdk 30**, compileSdk 37, JDK 21. AGP/Kotlin must match DSKit-Android and the apps (an `includeBuild` is one build).
 - **Modules**: `:core` (pure Kotlin), `:compose` (Android + Compose), `:testing` (fakes and rules). Pieces that pull a
-  heavy SDK get their own module so an app takes only what it uses.
-- **v0.1 scope**: the base pieces below, plus (still to port from the apps) Play Billing (`ProStore`), analytics client
-  with the "debug never collects" rule, the store review prompt, and common build logic (ktlint, Gradle conventions).
+  heavy SDK get their own module so an app takes only what it uses: `:billing` (Play Billing), `:firebase` (Analytics +
+  Crashlytics), `:review` (Play In-App Review).
+- **v0.1 scope**: the base pieces below, Play Billing (`ProStore`), the analytics sink with the "debug never collects"
+  rule, the store review prompt, and the common ktlint script (apps apply `CoreKit-Android/ktlint.gradle` instead of
+  keeping a copy). Gradle convention plugins were left out on purpose: the three app build files differ in SDKs and
+  flavors more than they repeat.
 - **Out of v0.1**: the Homer network layer (`ApiCaller`, retry, connectivity) until a second app has a backend.
 - **Visual pieces** repeated in the apps (discard guard, delete confirmation, decimal field, stepper, date pills) go to
   DSKit-Android in the same round, with the iOS twin evaluated case by case.
@@ -41,6 +44,15 @@ here. CoreKit does not depend on DSKit.
 | `TrackOnce` | compose | "Appeared" events fire once per visit, not per Activity recreation. |
 | `ObserveEvents` | compose | One-shot events are collected only while the screen is visible. |
 | `MainDispatcherRule`, `FakeEntitlement` | testing | Shared test support instead of a copy per app. |
+| `AnalyticsSink`, `CollectionPolicy` | core | Screens never see an analytics SDK; only store builds in real use collect. |
+| `ReviewGate` | core | The review prompt is asked once per version (and, optionally, N days apart). |
+| `ProStore`, `BillingGateway` | billing | Only a complete Play answer changes the right; the last confirmed one is kept; purchases are always acknowledged. |
+| `FirebaseMonitoring`, `FirebaseAnalyticsSink` | firebase | The only place that knows the Firebase SDK. |
+| `StoreReview` | review | Mark "asked" only after the Play call returned. |
+
+What stays in each app around these: its typed events (names are product decisions), its plan ids, where the confirmed
+right is stored (`EntitlementMemory` over the app's own keys), purchase analytics and anything trial-related
+(`ProStoreObserver`), and WHEN to ask for a review.
 
 ## Conventions
 
@@ -54,7 +66,7 @@ here. CoreKit does not depend on DSKit.
 ## Verify
 
 ```sh
-./gradlew assemble ktlint :compose:lintDebug :core:test :compose:testDebugUnitTest
+./gradlew assemble ktlint lintDebug :core:test testDebugUnitTest
 ```
 
 `ktlintFormat` fixes style. Release: bump `VERSION_NAME` in `gradle.properties`, update `CHANGELOG.md`, tag `x.y.z`.

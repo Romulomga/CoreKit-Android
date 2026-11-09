@@ -36,4 +36,7 @@ include(
     ":core",
     ":compose",
     ":testing",
+    ":billing",
+    ":firebase",
+    ":review",
 )

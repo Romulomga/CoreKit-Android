@@ -1,4 +1,4 @@
-// Igual ao do DSKit-Android, com o ktlint 1.x (ktlint-cli).
+// O estilo dos apps e das libs num lugar só: cada módulo aplica este script (no app, pelo caminho do submódulo).
 configurations {
     ktlint
 }
