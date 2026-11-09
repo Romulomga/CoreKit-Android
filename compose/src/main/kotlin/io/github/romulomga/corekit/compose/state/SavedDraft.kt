@@ -6,6 +6,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerializationException
+import kotlinx.serialization.builtins.nullable
 import kotlinx.serialization.json.Json
 
 /**
@@ -71,5 +72,9 @@ public class SavedDraft<T>(
 /** Um [SavedDraft] neste [SavedStateHandle]; [key] é único dentro do ViewModel. */
 public fun <T> SavedStateHandle.draft(key: String, serializer: KSerializer<T>, default: T): SavedDraft<T> =
     SavedDraft(this, key, serializer, default)
+
+/** O rascunho que pode não existir (o registro em edição, o documento duplicado): começa em `null`. */
+public fun <T : Any> SavedStateHandle.optionalDraft(key: String, serializer: KSerializer<T>): SavedDraft<T?> =
+    SavedDraft(this, key, serializer.nullable, null)
 
 private val draftJson = Json { ignoreUnknownKeys = true }
