@@ -42,6 +42,8 @@ here. CoreKit does not depend on DSKit.
 | `Navigator`, `NavigationState` | compose | One stack per tab, saved; the key already on top is not pushed again. |
 | `SavedDraft` (`SavedStateHandle.draft`) | compose | What the user typed lives in the ViewModel and survives process death. |
 | `TrackOnce` | compose | "Appeared" events fire once per visit, not per Activity recreation. |
+| `TrackAppearance` | compose | For funnels compared with iOS: counts like `.onAppear` (again on return), never on Activity recreation. |
+| `processScoped` | compose | Saved position of a flow whose data lives in memory does not outlive the process. |
 | `ObserveEvents` | compose | One-shot events are collected only while the screen is visible. |
 | `MainDispatcherRule`, `FakeEntitlement` | testing | Shared test support instead of a copy per app. |
 | `AnalyticsSink`, `CollectionPolicy` | core | Screens never see an analytics SDK; only store builds in real use collect. |

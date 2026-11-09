@@ -12,4 +12,7 @@
   falha não muda nada, compra sempre reconhecida), `PlayBillingGateway`, `FakeBillingGateway`.
 - `firebase`: `FirebaseMonitoring.start` e `FirebaseAnalyticsSink`.
 - `review`: `StoreReview.request`.
-- `ktlint.gradle` para os apps aplicarem direto do submódulo.
+- `ktlint.gradle` para os apps aplicarem direto do submódulo, com entradas e saídas declaradas (não roda sem mudança).
+- `compose`: `TrackAppearance` (a conta do `.onAppear`: conta na volta, nunca na recriação) e `processScoped` (estado
+  salvo que não atravessa a morte do processo). Vieram da adoção no Homer.
+- `core`: `SingleFlight.launchJob`, para quem precisa do `Job`.

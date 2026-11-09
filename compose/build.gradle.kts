@@ -61,6 +61,7 @@ dependencies {
     implementation(libs.compose.runtime.saveable)
     implementation(libs.compose.ui)
     implementation(libs.androidx.lifecycle.runtime.compose)
+    implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.lifecycle.viewmodel.navigation3)
 
     testImplementation(project(":testing"))

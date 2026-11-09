@@ -8,8 +8,8 @@ Pro que nasce `false`). O par visual é o [DSKit-Android](https://github.com/Rom
 
 - `core`: Kotlin puro. `SingleFlight`, `Entitlement`, `AppDispatchers`, `stateInScreen`, `GeneratedFiles`,
   `SystemZoneClock`.
-- `compose`: Android + Compose. `Navigator`/`NavigationState` (Navigation 3), `SavedDraft`, `TrackOnce`,
-  `ObserveEvents`.
+- `compose`: Android + Compose. `Navigator`/`NavigationState` (Navigation 3), `SavedDraft`, `processScoped`, `TrackOnce`,
+  `TrackAppearance`, `ObserveEvents`.
 - `testing`: `MainDispatcherRule`, `FakeEntitlement`.
 - `billing`: Play Billing. `ProStore` (o direito ao Pro com o último valor confirmado guardado e o estado "ainda não
   sei"), `PlayBillingGateway`, `FakeBillingGateway`.

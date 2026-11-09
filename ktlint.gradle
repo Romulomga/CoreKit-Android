@@ -13,6 +13,11 @@ tasks.register("ktlint", JavaExec) {
     classpath = configurations.ktlint
     mainClass.set("com.pinterest.ktlint.Main")
     args "src/**/*.kt"
+
+    // Sem entradas e saídas declaradas a tarefa rodava sempre, mesmo sem nada mudado.
+    inputs.files(fileTree("src") { include "**/*.kt" }, rootProject.file(".editorconfig")).withPropertyName("sources")
+    outputs.file(layout.buildDirectory.file("ktlint/ok"))
+    doLast { outputs.files.singleFile.text = "" }
 }
 
 tasks.named("check") { dependsOn("ktlint") }

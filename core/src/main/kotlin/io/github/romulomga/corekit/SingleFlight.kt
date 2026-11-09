@@ -1,6 +1,7 @@
 package io.github.romulomga.corekit
 
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -21,13 +22,14 @@ public class SingleFlight {
     public val isRunning: StateFlow<Boolean> = running.asStateFlow()
 
     /** Lança [block] em [scope] se nada estiver rodando; devolve `false` quando o toque foi ignorado. */
-    public fun launch(scope: CoroutineScope, block: suspend () -> Unit): Boolean {
-        if (!running.compareAndSet(expect = false, update = true)) return false
+    public fun launch(scope: CoroutineScope, block: suspend () -> Unit): Boolean = launchJob(scope, block) != null
+
+    /** O mesmo, devolvendo o `Job` para quem precisa esperar ou cancelar; `null` quando o toque foi ignorado. */
+    public fun launchJob(scope: CoroutineScope, block: suspend () -> Unit): Job? {
+        if (!running.compareAndSet(expect = false, update = true)) return null
 
         // `invokeOnCompletion` e não `finally`: cobre também o escopo cancelado antes de a corrotina começar.
-        scope.launch { block() }.invokeOnCompletion { running.value = false }
-
-        return true
+        return scope.launch { block() }.also { job -> job.invokeOnCompletion { running.value = false } }
     }
 
     /** O mesmo para quem já está numa corrotina; devolve `null` quando a chamada foi ignorada. */
