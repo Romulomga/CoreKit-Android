@@ -1,7 +1,10 @@
 package io.github.romulomga.corekit
 
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 
 /**
  * O direito ao Pro com o estado "ainda não sei". Um `Boolean` que nasce `false` faz quem paga ver o teaser (e contar
@@ -28,3 +31,6 @@ public interface Entitlement {
 
 /** Suspende até o direito guardado ser lido: é o que a fase de carregamento do app espera antes de mostrar a primeira tela. */
 public suspend fun Entitlement.awaitResolved(): EntitlementState = state.first { it.isResolved }
+
+/** O "é Pro?" como fluxo, para um `combine`; [EntitlementState.UNKNOWN] conta como `false`. */
+public val Entitlement.isProFlow: Flow<Boolean> get() = state.map { it.isPro }.distinctUntilChanged()

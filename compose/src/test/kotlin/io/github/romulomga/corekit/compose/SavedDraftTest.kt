@@ -38,6 +38,20 @@ class SavedDraftTest {
     }
 
     @Test
+    fun anUntouchedDraftIsNotResumed() {
+        val handle = SavedStateHandle()
+
+        handle.draft("form", Form.serializer(), Form()).update { it.copy(amount = 7) }
+
+        val restoredHandle = SavedStateHandle(handle.keys().associateWith { handle.get<Any?>(it) })
+        val restored = restoredHandle.draft("form", Form.serializer(), Form(amount = 9), restoreIf = { it.name.isNotEmpty() })
+
+        assertFalse(restored.wasRestored)
+        assertEquals(Form(amount = 9), restored.value)
+        assertFalse(restoredHandle.contains("form"))
+    }
+
+    @Test
     fun startsFromTheDefaultWithoutASavedDraft() {
         val draft = SavedStateHandle().draft("form", Form.serializer(), Form(name = "novo"))
 

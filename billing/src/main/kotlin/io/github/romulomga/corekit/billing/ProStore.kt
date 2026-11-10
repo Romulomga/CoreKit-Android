@@ -155,28 +155,30 @@ public class ProStore(
         return answered && (isPro || gateway.isOnline())
     }
 
-    private suspend fun settle(update: BillingUpdate): PurchaseOutcome {
-        val outcome = when (update.code) {
-            BillingUpdateCode.OK -> {
-                val purchased = update.purchases.firstOrNull { it.isPurchased }
+    private suspend fun settle(update: BillingUpdate): PurchaseOutcome = when (update.code) {
+        BillingUpdateCode.OK -> {
+            val purchased = update.purchases.firstOrNull { it.isPurchased }
 
-                purchased?.let { observer.onPurchased(it) }
+            purchased?.let { observer.onPurchased(it) }
 
-                // Compra pendente (boleto) não dá o direito ainda; a resposta completa da Play decide.
-                acknowledge(update.purchases)
-                query()
+            // Compra pendente (boleto) não dá o direito ainda; a resposta completa da Play decide.
+            acknowledge(update.purchases)
+            query()
 
-                PurchaseOutcome(if (purchased != null) PurchaseResult.PURCHASED else PurchaseResult.PENDING, purchased)
-            }
-
-            BillingUpdateCode.CANCELLED -> PurchaseOutcome(PurchaseResult.CANCELLED)
-
-            // A Play diz que a conta já tem o produto: nada foi cobrado, só falta o app saber.
-            BillingUpdateCode.ALREADY_OWNED -> PurchaseOutcome(PurchaseResult.ALREADY_OWNED).also { query() }
-
-            BillingUpdateCode.ERROR -> PurchaseOutcome(PurchaseResult.FAILED, debugMessage = update.debugMessage)
+            finish(PurchaseOutcome(if (purchased != null) PurchaseResult.PURCHASED else PurchaseResult.PENDING, purchased))
         }
 
+        BillingUpdateCode.CANCELLED -> finish(PurchaseOutcome(PurchaseResult.CANCELLED))
+
+        // A Play diz que a conta já tem o produto: nada foi cobrado, só falta o app saber. O observador fecha a
+        // tentativa ANTES da consulta: o que ele guardou para uma compra nova (um trial à espera) não pode ser adotado
+        // pela compra antiga que a consulta vai trazer.
+        BillingUpdateCode.ALREADY_OWNED -> finish(PurchaseOutcome(PurchaseResult.ALREADY_OWNED)).also { query() }
+
+        BillingUpdateCode.ERROR -> finish(PurchaseOutcome(PurchaseResult.FAILED, debugMessage = update.debugMessage))
+    }
+
+    private suspend fun finish(outcome: PurchaseOutcome): PurchaseOutcome {
         observer.onPurchaseFinished(outcome.result)
 
         return outcome

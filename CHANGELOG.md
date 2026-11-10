@@ -16,4 +16,6 @@
 - `compose`: `TrackAppearance` (a conta do `.onAppear`: conta na volta, nunca na recriação) e `processScoped` (estado
   salvo que não atravessa a morte do processo). Vieram da adoção no Homer.
 - `core`: `SingleFlight.launchJob`, para quem precisa do `Job`; `GeneratedFiles.purge(olderThan)`.
-- `compose`: `SavedStateHandle.optionalDraft`.
+- `compose`: `SavedStateHandle.optionalDraft` e `draft(restoreIf)`, para não retomar formulário intocado.
+- `core`: `Entitlement.isProFlow`.
+- `billing`: em `ALREADY_OWNED` o observador fecha a tentativa antes da nova consulta à Play.

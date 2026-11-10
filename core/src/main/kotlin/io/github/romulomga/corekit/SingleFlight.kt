@@ -14,7 +14,9 @@ import kotlinx.coroutines.launch
  * rápidos gravam dois registros.
  *
  * A trava fecha de forma síncrona, antes de a corrotina começar, e abre quando ela termina, falha ou é cancelada.
- * Ligue [isRunning] ao botão (`DSButton(loading = …)` ou `enabled = !running`).
+ * Ligue [isRunning] ao botão (`DSButton(loading = …)` ou `enabled = !running`). Num estado de tela montado com
+ * `combine`, não aninhe um segundo `combine` só para ele: o que a pessoa digita chegaria ao estado um despacho depois.
+ * Junte [isRunning] aos outros fluxos na mesma chamada (a versão com `vararg`/lista) ou espelhe-o no estado local.
  */
 public class SingleFlight {
     private val running = MutableStateFlow(false)

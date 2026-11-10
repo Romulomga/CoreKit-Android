@@ -177,7 +177,7 @@ class ProStoreTest {
         assertEquals(PurchaseResult.PURCHASED, outcome.result)
         assertEquals("bought", outcome.purchase?.purchaseToken)
         assertEquals(EntitlementState.PRO, store.state.value)
-        assertEquals(listOf("launching", "purchased", "finished PURCHASED"), observer.purchaseSteps)
+        assertEquals(listOf("launching", "purchased", "confirmed", "finished PURCHASED"), observer.purchaseSteps)
         assertTrue("bought" in gateway.acknowledged)
     }
 
@@ -203,8 +203,11 @@ class ProStoreTest {
         gateway.purchases = listOf(purchase(lifetime.productId))
         gateway.nextPurchase = BillingUpdate(BillingUpdateCode.ALREADY_OWNED)
 
+        observer.confirmed.clear()
+
         assertEquals(PurchaseResult.ALREADY_OWNED, store.purchase(Activity(), product(lifetime)).result)
         assertEquals(EntitlementState.PRO, store.state.value)
+        assertEquals(listOf("launching", "finished ALREADY_OWNED", "confirmed"), observer.purchaseSteps)
     }
 
     @Test
@@ -219,7 +222,7 @@ class ProStoreTest {
         gateway.deliverOutOfFlow(BillingUpdate(BillingUpdateCode.OK, listOf(landed)))
 
         assertEquals(EntitlementState.PRO, store.state.value)
-        assertEquals(listOf("purchased", "finished PURCHASED"), observer.purchaseSteps)
+        assertEquals(listOf("purchased", "confirmed", "finished PURCHASED"), observer.purchaseSteps)
     }
 
     @Test
@@ -303,6 +306,8 @@ class ProStoreTest {
         }
 
         override suspend fun onConfirmed(active: List<PlayPurchase>) {
+            if (purchaseSteps.isNotEmpty()) purchaseSteps += "confirmed"
+
             confirmed += active
         }
 

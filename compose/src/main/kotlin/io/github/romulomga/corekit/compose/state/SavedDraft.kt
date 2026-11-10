@@ -18,14 +18,21 @@ import kotlinx.serialization.json.Json
  * usuário digitou ou abriu.
  *
  * @param default o formulário em branco: o valor sem rascunho guardado e depois de [clear].
+ * @param restoreIf se o rascunho guardado merece ser retomado. Um formulário que a pessoa não tocou deve recomeçar dos
+ *   valores de hoje (a data, o último peso), e não dos de quando o processo morreu.
  */
 public class SavedDraft<T>(
     private val handle: SavedStateHandle,
     private val key: String,
     private val serializer: KSerializer<T>,
-    private val default: T
+    private val default: T,
+    restoreIf: (T) -> Boolean = { true }
 ) {
-    private val restored: T? = restore()
+    private val restored: T? = restore()?.takeIf(restoreIf)
+
+    init {
+        if (restored == null) handle.remove<String>(key)
+    }
 
     /** Se o valor inicial veio de um rascunho guardado (processo restaurado), e não de [default]. */
     public val wasRestored: Boolean = restored != null
@@ -70,8 +77,12 @@ public class SavedDraft<T>(
 }
 
 /** Um [SavedDraft] neste [SavedStateHandle]; [key] é único dentro do ViewModel. */
-public fun <T> SavedStateHandle.draft(key: String, serializer: KSerializer<T>, default: T): SavedDraft<T> =
-    SavedDraft(this, key, serializer, default)
+public fun <T> SavedStateHandle.draft(
+    key: String,
+    serializer: KSerializer<T>,
+    default: T,
+    restoreIf: (T) -> Boolean = { true }
+): SavedDraft<T> = SavedDraft(this, key, serializer, default, restoreIf)
 
 /** O rascunho que pode não existir (o registro em edição, o documento duplicado): começa em `null`. */
 public fun <T : Any> SavedStateHandle.optionalDraft(key: String, serializer: KSerializer<T>): SavedDraft<T?> =
