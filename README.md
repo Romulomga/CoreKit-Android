@@ -16,6 +16,7 @@ Pro que nasce `false`). O par visual é o [DSKit-Android](https://github.com/Rom
 - `firebase`: `FirebaseMonitoring.start` e `FirebaseAnalyticsSink` (Analytics + Crashlytics atrás do `AnalyticsSink` do
   `core`, com a coleta desligada fora do build de loja).
 - `review`: `StoreReview.request` (In-App Review); a trava de frequência `ReviewGate` fica no `core`.
+- `database`: `KeepCorruptDatabaseFactory`, para o Room não deixar o Android apagar um banco corrompido.
 
 O `core` também traz `AnalyticsSink`, `CollectionPolicy` e `ReviewGate`.
 
@@ -38,6 +39,7 @@ corekit-core = { module = "com.github.Romulomga.CoreKit-Android:core", version.r
 corekit-compose = { module = "com.github.Romulomga.CoreKit-Android:compose", version.ref = "corekit" }
 corekit-testing = { module = "com.github.Romulomga.CoreKit-Android:testing", version.ref = "corekit" }
 corekit-billing = { module = "com.github.Romulomga.CoreKit-Android:billing", version.ref = "corekit" }
+corekit-database = { module = "com.github.Romulomga.CoreKit-Android:database", version.ref = "corekit" }
 corekit-firebase = { module = "com.github.Romulomga.CoreKit-Android:firebase", version.ref = "corekit" }
 corekit-review = { module = "com.github.Romulomga.CoreKit-Android:review", version.ref = "corekit" }
 ```

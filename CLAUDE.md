@@ -17,7 +17,8 @@ here. CoreKit does not depend on DSKit.
 - **minSdk 30**, compileSdk 37, JDK 21. AGP/Kotlin must match DSKit-Android and the apps (an `includeBuild` is one build).
 - **Modules**: `:core` (pure Kotlin), `:compose` (Android + Compose), `:testing` (fakes and rules). Pieces that pull a
   heavy SDK get their own module so an app takes only what it uses: `:billing` (Play Billing), `:firebase` (Analytics +
-  Crashlytics), `:review` (Play In-App Review).
+  Crashlytics), `:review` (Play In-App Review), `:database` (the SQLite open-helper factory that keeps a corrupted file
+  instead of letting Android delete it).
 - **v0.1 scope**: the base pieces below, Play Billing (`ProStore`), the analytics sink with the "debug never collects"
   rule, the store review prompt, and the common ktlint script (apps apply `CoreKit-Android/ktlint.gradle` instead of
   keeping a copy). Gradle convention plugins were left out on purpose: the three app build files differ in SDKs and

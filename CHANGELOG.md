@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.2 - 2026-11-10
+
+- `database` (módulo novo): `KeepCorruptDatabaseFactory`. O Android apaga sozinho o arquivo de um banco que o SQLite
+  acusa de corrompido e abre outro vazio; com a fábrica no `openHelperFactory` do Room o arquivo fica e a abertura
+  lança, para o app mostrar a tela de recuperação.
+
 ## 0.1.1 - 2026-11-09
 
 - `billing`: a busca de produtos devolve `ProductsAnswer`: uma falha parcial mantém os planos que carregaram, e

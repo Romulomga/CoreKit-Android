@@ -39,4 +39,5 @@ include(
     ":billing",
     ":firebase",
     ":review",
+    ":database",
 )
