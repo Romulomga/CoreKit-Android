@@ -277,6 +277,43 @@ class ProStoreTest {
         assertEquals(listOf("empty", "error"), observer.productFailures)
     }
 
+    @Test
+    fun `a failed reload keeps a loaded catalog`() = runTest {
+        val store = store()
+
+        gateway.products = listOf(product(yearly))
+        store.loadProducts()
+        gateway.products = null
+        store.loadProducts()
+
+        assertEquals(ProductsState.LOADED, store.productsState.value)
+        assertEquals(listOf("error"), observer.productFailures)
+    }
+
+    @Test
+    fun `a partial failure keeps the plans that loaded and still reports it`() = runTest {
+        val store = store()
+
+        gateway.products = listOf(product(yearly))
+        gateway.partialProductsFailure = ProductsFailure.ERROR
+        store.loadProducts()
+
+        assertEquals(ProductsState.LOADED, store.productsState.value)
+        assertEquals(listOf(yearly), store.products.value.map { it.plan })
+        assertEquals(listOf("error"), observer.productFailures)
+    }
+
+    @Test
+    fun `a device without Play reports unavailable, not a failed query`() = runTest {
+        val store = store()
+
+        gateway.productsUnavailable = true
+        store.loadProducts()
+
+        assertEquals(ProductsState.FAILED, store.productsState.value)
+        assertEquals(listOf("unavailable"), observer.productFailures)
+    }
+
     private class FakeMemory : EntitlementMemory {
         var saved: EntitlementKind? = null
 

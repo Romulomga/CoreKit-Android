@@ -31,7 +31,22 @@ public class FakeBillingGateway(
         return purchases
     }
 
-    override suspend fun queryProducts(plans: List<ProPlan>): List<ProProduct>? = products
+    /** Liga para simular o aparelho sem Play na busca de produtos. */
+    public var productsUnavailable: Boolean = false
+
+    override suspend fun queryProducts(plans: List<ProPlan>): ProductsAnswer {
+        val loaded = products
+
+        return when {
+            productsUnavailable -> ProductsAnswer(emptyList(), ProductsFailure.UNAVAILABLE)
+            loaded == null -> ProductsAnswer(emptyList(), ProductsFailure.ERROR)
+            loaded.isEmpty() -> ProductsAnswer(emptyList(), ProductsFailure.EMPTY)
+            else -> ProductsAnswer(loaded, partialProductsFailure)
+        }
+    }
+
+    /** Com [products] preenchido, simula a falha de uma das buscas (o resto carregou). */
+    public var partialProductsFailure: ProductsFailure? = null
 
     override suspend fun acknowledge(purchase: PlayPurchase): Boolean {
         acknowledged += purchase.purchaseToken

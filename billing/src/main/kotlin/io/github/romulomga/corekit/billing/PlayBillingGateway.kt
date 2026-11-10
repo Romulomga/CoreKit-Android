@@ -28,6 +28,7 @@ import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.withTimeoutOrNull
 
 /** A Play de verdade (Play Billing). [scope] é o do app: a resposta de uma compra chega fora de qualquer tela. */
 public class PlayBillingGateway(context: Context, private val scope: CoroutineScope) : BillingGateway {
@@ -60,10 +61,11 @@ public class PlayBillingGateway(context: Context, private val scope: CoroutineSc
         return all
     }
 
-    override suspend fun queryProducts(plans: List<ProPlan>): List<ProProduct>? {
-        if (!connect()) return null
+    override suspend fun queryProducts(plans: List<ProPlan>): ProductsAnswer {
+        if (!connect()) return ProductsAnswer(emptyList(), ProductsFailure.UNAVAILABLE)
 
         val all = mutableListOf<ProProduct>()
+        var failed = false
 
         for (type in PRODUCT_TYPES) {
             val wanted = plans.filter { it.productType == type }
@@ -77,7 +79,8 @@ public class PlayBillingGateway(context: Context, private val scope: CoroutineSc
 
             if (result.billingResult.responseCode != BillingResponseCode.OK) {
                 Log.w(TAG, "queryProductDetails failed: ${result.billingResult.debugMessage}")
-                return null
+                failed = true
+                continue
             }
 
             all += result.productDetailsList.orEmpty().mapNotNull { found ->
@@ -87,7 +90,13 @@ public class PlayBillingGateway(context: Context, private val scope: CoroutineSc
             }
         }
 
-        return all
+        val failure = when {
+            failed -> ProductsFailure.ERROR
+            all.isEmpty() -> ProductsFailure.EMPTY
+            else -> null
+        }
+
+        return ProductsAnswer(all, failure)
     }
 
     private fun toProduct(plan: ProPlan, details: ProductDetails): ProProduct? {
@@ -176,19 +185,23 @@ public class PlayBillingGateway(context: Context, private val scope: CoroutineSc
     private suspend fun connect(): Boolean {
         if (client.isReady) return true
 
-        return suspendCancellableCoroutine { continuation ->
-            client.startConnection(
-                object : BillingClientStateListener {
-                    override fun onBillingSetupFinished(result: BillingResult) {
-                        if (continuation.isActive) continuation.resume(result.responseCode == BillingResponseCode.OK)
-                    }
+        // Com teto: se o serviço da Play nunca chamar o ouvinte, quem espera (restaurar, o catálogo) ficaria preso para
+        // sempre, segurando a trava das consultas.
+        return withTimeoutOrNull(CONNECT_TIMEOUT_MILLIS) { awaitConnection() } ?: false
+    }
 
-                    override fun onBillingServiceDisconnected() {
-                        if (continuation.isActive) continuation.resume(false)
-                    }
+    private suspend fun awaitConnection(): Boolean = suspendCancellableCoroutine { continuation ->
+        client.startConnection(
+            object : BillingClientStateListener {
+                override fun onBillingSetupFinished(result: BillingResult) {
+                    if (continuation.isActive) continuation.resume(result.responseCode == BillingResponseCode.OK)
                 }
-            )
-        }
+
+                override fun onBillingServiceDisconnected() {
+                    if (continuation.isActive) continuation.resume(false)
+                }
+            }
+        )
     }
 
     private fun BillingResult.toCode(): BillingUpdateCode = when (responseCode) {
@@ -212,6 +225,7 @@ public class PlayBillingGateway(context: Context, private val scope: CoroutineSc
 
     private companion object {
         const val TAG = "CoreKit.billing"
+        const val CONNECT_TIMEOUT_MILLIS = 10_000L
 
         val PRODUCT_TYPES = listOf(ProductType.SUBS, ProductType.INAPP)
     }

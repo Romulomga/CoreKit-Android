@@ -10,8 +10,8 @@ public interface BillingGateway {
     /** Todas as compras da conta (assinaturas e compras únicas). `null` se a Play não deu uma resposta completa. */
     public suspend fun queryPurchases(): List<PlayPurchase>?
 
-    /** Os produtos à venda dos [plans]. `null` se alguma busca falhou; lista vazia é resposta (ids errados, país). */
-    public suspend fun queryProducts(plans: List<ProPlan>): List<ProProduct>?
+    /** Os produtos à venda dos [plans], com o que deu certo mesmo quando parte da busca falhou. */
+    public suspend fun queryProducts(plans: List<ProPlan>): ProductsAnswer
 
     /** Compra não reconhecida em 3 dias é estornada pela Play. */
     public suspend fun acknowledge(purchase: PlayPurchase): Boolean
@@ -37,3 +37,20 @@ public data class BillingUpdate(
     val purchases: List<PlayPurchase> = emptyList(),
     val debugMessage: String? = null
 )
+
+/**
+ * A resposta da busca de produtos. Uma falha parcial (assinaturas responderam, compra única não) ainda traz o que
+ * carregou: esconder planos vendáveis por causa de um erro em outro tipo de produto, não.
+ */
+public data class ProductsAnswer(val products: List<ProProduct>, val failure: ProductsFailure? = null)
+
+public enum class ProductsFailure(public val reason: String) {
+    /** Não deu para falar com a Play (aparelho sem Play, serviço desligado): nenhuma busca chegou a acontecer. */
+    UNAVAILABLE("unavailable"),
+
+    /** A Play respondeu com erro a pelo menos uma busca. */
+    ERROR("error"),
+
+    /** Tudo respondeu e não veio produto nenhum (id ou disponibilidade errados). */
+    EMPTY("empty")
+}

@@ -40,12 +40,4 @@ class BillingModelsTest {
         assertEquals(7, Period.ofWeeks(1).approximateDays())
         assertEquals(30, Period.ofMonths(1).approximateDays())
     }
-
-    @Test
-    fun `a failed reload keeps a loaded catalog`() {
-        assertEquals(ProductsState.LOADED, ProductsState.after(succeeded = false, loadedCount = 0, hadProducts = true))
-        assertEquals(ProductsState.FAILED, ProductsState.after(succeeded = true, loadedCount = 0, hadProducts = false))
-        assertEquals("empty", ProductsState.failureReason(succeeded = true, loadedCount = 0))
-        assertNull(ProductsState.failureReason(succeeded = true, loadedCount = 3))
-    }
 }

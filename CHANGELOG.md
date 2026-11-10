@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.1 - 2026-11-09
+
+- `billing`: a busca de produtos devolve `ProductsAnswer`: uma falha parcial mantém os planos que carregaram, e
+  "não deu para falar com a Play" (`unavailable`) é distinto de "a busca falhou" (`error`). Quebra só para quem
+  implementa `BillingGateway`; o `FakeBillingGateway` continua com `products`.
+- `billing`: a conexão com a Play tem teto de 10 s; sem ele, um serviço que nunca responde prendia "Restaurar compras"
+  e o catálogo para sempre.
+
 ## 0.1.0 - 2026-11-09
 
 - `core`: `SingleFlight`, `KeyedSingleFlight`, `Entitlement`/`EntitlementState`, `AppDispatchers`, `stateInScreen`,

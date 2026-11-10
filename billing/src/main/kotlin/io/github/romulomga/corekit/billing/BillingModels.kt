@@ -35,26 +35,7 @@ public enum class EntitlementKind(public val analyticsName: String) {
 public enum class ProductsState {
     LOADING,
     LOADED,
-    FAILED;
-
-    public companion object {
-        /**
-         * O estado depois de uma busca. Resposta vazia também é falha para quem olha (id ou disponibilidade errados),
-         * e um catálogo já carregado sobrevive a uma busca que falha: trocar planos vendáveis por um card de erro, não.
-         */
-        public fun after(succeeded: Boolean, loadedCount: Int, hadProducts: Boolean): ProductsState = when {
-            succeeded && loadedCount > 0 -> LOADED
-            hadProducts -> LOADED
-            else -> FAILED
-        }
-
-        /** O motivo da falha para o analytics (`error` ou `empty`); `null` quando não houve falha. */
-        public fun failureReason(succeeded: Boolean, loadedCount: Int): String? = when {
-            !succeeded -> "error"
-            loadedCount == 0 -> "empty"
-            else -> null
-        }
-    }
+    FAILED
 }
 
 /** Uma fase de preço de uma oferta da Play (o teste grátis tem preço zero). */

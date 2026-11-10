@@ -42,7 +42,10 @@ public interface ProStoreObserver {
     /** A Play deu uma resposta completa: [active] são as compras vigentes dos planos do app, já reconhecidas. */
     public suspend fun onConfirmed(active: List<PlayPurchase>) {}
 
-    /** A busca de produtos falhou: [reason] é `error` ou `empty`. */
+    /**
+     * A busca de produtos falhou, mesmo que em parte: [reason] é `error`, `empty` ou `unavailable` (não deu para falar
+     * com a Play, como num aparelho sem ela; o app decide se isso conta como falha no analytics).
+     */
     public fun onProductsLoadFailed(reason: String) {}
 
     /** A Play não respondeu e o Pro em uso vem do último valor confirmado. Uma vez por processo. */
@@ -124,13 +127,12 @@ public class ProStore(
         try {
             if (_products.value.isEmpty()) _productsState.value = ProductsState.LOADING
 
-            val loaded = gateway.queryProducts(plans)
-            val count = loaded?.size ?: 0
+            val answer = gateway.queryProducts(plans)
 
-            if (!loaded.isNullOrEmpty()) _products.value = loaded.sortedBy { it.priceMicros }
+            if (answer.products.isNotEmpty()) _products.value = answer.products.sortedBy { it.priceMicros }
 
-            _productsState.value = ProductsState.after(loaded != null, count, _products.value.isNotEmpty())
-            ProductsState.failureReason(loaded != null, count)?.let(observer::onProductsLoadFailed)
+            _productsState.value = if (_products.value.isNotEmpty()) ProductsState.LOADED else ProductsState.FAILED
+            answer.failure?.let { observer.onProductsLoadFailed(it.reason) }
         } finally {
             productsLock.unlock()
         }
