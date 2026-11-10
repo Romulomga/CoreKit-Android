@@ -1,6 +1,6 @@
 # Changelog
 
-## Não lançado
+## 0.1.0 - 2026-11-09
 
 - `core`: `SingleFlight`, `KeyedSingleFlight`, `Entitlement`/`EntitlementState`, `AppDispatchers`, `stateInScreen`,
   `GeneratedFiles.purge`, `SystemZoneClock`.
