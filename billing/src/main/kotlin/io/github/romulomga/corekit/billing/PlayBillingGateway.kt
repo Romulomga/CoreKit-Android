@@ -115,10 +115,8 @@ public class PlayBillingGateway(context: Context, private val scope: CoroutineSc
                 }
             )
         }
-        val offer = SubscriptionOffer.pick(offers) ?: return null
-        val phase = offer.recurringPhase ?: return null
 
-        return ProProduct(plan, phase.formattedPrice, phase.priceMicros, phase.currencyCode, offer.freeTrial, offer.offerToken)
+        return subscriptionProduct(plan, offers)
     }
 
     override suspend fun acknowledge(purchase: PlayPurchase): Boolean {

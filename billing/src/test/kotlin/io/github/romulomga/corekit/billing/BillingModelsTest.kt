@@ -32,6 +32,28 @@ class BillingModelsTest {
     }
 
     @Test
+    fun `a purchase that starts with a free trial charges nothing at once`() {
+        val yearly = ProPlan("pro.yearly", ProPlanType.SUBSCRIPTION)
+        val base = SubscriptionOffer("base", null, listOf(paid))
+        val trial = SubscriptionOffer("trial", "free-week", listOf(free, paid))
+        val withTrial = subscriptionProduct(yearly, listOf(base, trial))
+        val withoutTrial = subscriptionProduct(yearly, listOf(base))
+
+        assertEquals(4_990L, withTrial?.priceCents)
+        assertEquals(0L, withTrial?.chargedAtPurchaseCents)
+        assertEquals("trial", withTrial?.offerToken)
+        assertEquals(4_990L, withoutTrial?.chargedAtPurchaseCents)
+        assertNull(subscriptionProduct(yearly, emptyList()))
+    }
+
+    @Test
+    fun `a one-time purchase charges its price`() {
+        val lifetime = ProProduct(ProPlan("pro.lifetime", ProPlanType.LIFETIME), "R$ 79,90", 79_900_000, "BRL")
+
+        assertEquals(7_990L, lifetime.chargedAtPurchaseCents)
+    }
+
+    @Test
     fun `first charge follows the calendar`() {
         val zone = ZoneId.of("America/Sao_Paulo")
         val start = Instant.parse("2026-01-31T15:00:00Z")

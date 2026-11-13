@@ -80,9 +80,16 @@ public data class ProProduct(
     val currencyCode: String,
     /** O teste grátis a que esta conta tem direito; `null` sem oferta ou com o trial já usado. */
     val freeTrial: Period? = null,
-    val offerToken: String? = null
+    val offerToken: String? = null,
+    /**
+     * O que a Play cobra no ato da compra: zero quando ela começa com teste grátis, senão o preço. É o valor da receita
+     * da venda (o gêmeo do `StoreTransaction.price` do iOS); o de lista contaria como receita um trial que não cobrou nada.
+     */
+    val chargedAtPurchaseMicros: Long = priceMicros
 ) {
     public val priceCents: Long get() = priceMicros / MICROS_PER_CENT
+
+    public val chargedAtPurchaseCents: Long get() = chargedAtPurchaseMicros / MICROS_PER_CENT
 
     /** O único gate da UI para anunciar "X dias grátis": nunca a mera existência da oferta no console. */
     public val hasEligibleFreeTrial: Boolean get() = freeTrial != null
@@ -95,6 +102,25 @@ public data class ProProduct(
     private companion object {
         const val MICROS_PER_CENT = 10_000L
     }
+}
+
+/**
+ * A assinatura à venda pela oferta de [SubscriptionOffer.pick]: o preço que se repete e o da primeira fase, que é o que a
+ * compra cobra na hora.
+ */
+internal fun subscriptionProduct(plan: ProPlan, offers: List<SubscriptionOffer>): ProProduct? {
+    val offer = SubscriptionOffer.pick(offers) ?: return null
+    val recurring = offer.recurringPhase ?: return null
+
+    return ProProduct(
+        plan = plan,
+        formattedPrice = recurring.formattedPrice,
+        priceMicros = recurring.priceMicros,
+        currencyCode = recurring.currencyCode,
+        freeTrial = offer.freeTrial,
+        offerToken = offer.offerToken,
+        chargedAtPurchaseMicros = offer.phases.first().priceMicros
+    )
 }
 
 /** Uma compra como a Play devolve, só com o que as regras usam (sem o tipo do SDK, para testar na JVM). */
