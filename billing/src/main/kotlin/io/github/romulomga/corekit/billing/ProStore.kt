@@ -86,7 +86,7 @@ public class ProStore(
     private val productsLock = Mutex()
 
     @Volatile
-    private var isForcedPro = false
+    private var forced: EntitlementKind? = null
 
     @Volatile
     private var hasReportedKeptPro = false
@@ -97,7 +97,7 @@ public class ProStore(
 
     /** No lançamento: o último direito confirmado, a consulta à Play e o catálogo. */
     public suspend fun start() {
-        if (!isForcedPro) memory.load()?.let(::apply)
+        if (forced == null) memory.load()?.let(::apply)
 
         coroutineScope {
             val query = async { query() }
@@ -115,11 +115,18 @@ public class ProStore(
     /** A cada volta ao primeiro plano: assinatura que venceu, compra pendente que caiu. `false` se a Play não respondeu. */
     public suspend fun refresh(): Boolean = query()
 
-    /** Pro vitalício até o fim do processo, e a Play não o derruba. Só para builds de teste: quem chama decide. */
-    public fun forcePro() {
-        isForcedPro = true
-        apply(EntitlementKind.LIFETIME)
+    /**
+     * [kind] até o fim do processo, diga a Play o que disser, e nada é guardado: o Pro das capturas da loja, ou o grátis
+     * numa conta que tem o vitalício (que não se cancela). Só para builds de teste: quem chama decide. A compra feita
+     * assim ainda é reconhecida. Gêmeo do `force(_:)` do iOS.
+     */
+    public fun force(kind: EntitlementKind) {
+        forced = kind
+        apply(kind)
     }
+
+    /** O mesmo que `force(EntitlementKind.LIFETIME)`. */
+    public fun forcePro(): Unit = force(EntitlementKind.LIFETIME)
 
     public suspend fun loadProducts() {
         if (!productsLock.tryLock()) return
@@ -188,7 +195,7 @@ public class ProStore(
 
     /** `false` se a Play não deu uma resposta completa: nada muda. */
     private suspend fun query(): Boolean {
-        if (isForcedPro) return true
+        if (forced != null) return true
 
         return refreshLock.withLock {
             val purchases = gateway.queryPurchases()
@@ -216,8 +223,8 @@ public class ProStore(
     }
 
     private fun apply(resolved: EntitlementKind) {
-        // O start() do Application pode terminar depois que a Activity forçou o Pro.
-        val kind = if (isForcedPro) EntitlementKind.LIFETIME else resolved
+        // O start() do Application pode terminar depois que a Activity forçou o direito.
+        val kind = forced ?: resolved
 
         _kind.value = kind
         _state.value = if (kind == EntitlementKind.NONE) EntitlementState.FREE else EntitlementState.PRO

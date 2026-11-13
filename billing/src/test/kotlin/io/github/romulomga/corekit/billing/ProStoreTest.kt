@@ -256,6 +256,24 @@ class ProStoreTest {
     }
 
     @Test
+    fun `forced free holds on an account that owns lifetime and is never remembered`() = runTest {
+        memory.saved = EntitlementKind.LIFETIME
+        gateway.purchases = listOf(purchase(lifetime.productId))
+
+        val store = store()
+
+        store.force(EntitlementKind.NONE)
+        store.start()
+
+        assertEquals(EntitlementState.FREE, store.state.value)
+        assertEquals(EntitlementKind.NONE, store.kind.value)
+        assertTrue(store.refresh())
+        assertEquals(EntitlementState.FREE, store.state.value)
+        assertEquals(EntitlementKind.LIFETIME, memory.saved)
+        assertEquals(0, gateway.purchaseQueries)
+    }
+
+    @Test
     fun `products are sorted by price and an empty answer is a failure`() = runTest {
         val store = store()
 
