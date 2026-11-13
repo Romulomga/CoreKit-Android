@@ -66,26 +66,34 @@ public class FirebaseAnalyticsSink(context: Context) : AnalyticsSink {
         crashlytics.recordException(error)
     }
 
-    override fun logPurchase(purchase: PurchaseRevenue) {
-        val item = Bundle().apply {
-            putString(FirebaseAnalytics.Param.ITEM_ID, purchase.itemId)
-            putString(FirebaseAnalytics.Param.ITEM_NAME, purchase.itemId)
-            putString(FirebaseAnalytics.Param.ITEM_CATEGORY, purchase.category)
-        }
-        val params = Bundle().apply {
-            putDouble(FirebaseAnalytics.Param.VALUE, purchase.valueCents / CENTS_PER_UNIT)
-            putString(FirebaseAnalytics.Param.CURRENCY, purchase.currency)
-            putParcelableArray(FirebaseAnalytics.Param.ITEMS, arrayOf(item))
-            purchase.transactionId?.let { putString(FirebaseAnalytics.Param.TRANSACTION_ID, it) }
-        }
+    override fun logPurchase(purchase: PurchaseRevenue): Unit =
+        analytics.logEvent(FirebaseAnalytics.Event.PURCHASE, purchaseParameters(purchase))
+}
 
-        analytics.logEvent(FirebaseAnalytics.Event.PURCHASE, params)
+/**
+ * O GA4 soma `value` como vem, então ele vai na moeda cheia, e descarta a receita sem `value` ou `currency`. O item leva
+ * o próprio preço e a quantidade: sem eles, os relatórios por produto ficam sem receita. Igual ao motor do iOS.
+ */
+internal fun purchaseParameters(purchase: PurchaseRevenue): Bundle {
+    val value = purchase.valueCents / CENTS_PER_UNIT
+    val item = Bundle().apply {
+        putString(FirebaseAnalytics.Param.ITEM_ID, purchase.itemId)
+        putString(FirebaseAnalytics.Param.ITEM_NAME, purchase.itemName)
+        putString(FirebaseAnalytics.Param.ITEM_CATEGORY, purchase.category)
+        putDouble(FirebaseAnalytics.Param.PRICE, value)
+        putString(FirebaseAnalytics.Param.CURRENCY, purchase.currency)
+        putLong(FirebaseAnalytics.Param.QUANTITY, 1)
     }
 
-    private companion object {
-        const val CENTS_PER_UNIT = 100.0
+    return Bundle().apply {
+        putDouble(FirebaseAnalytics.Param.VALUE, value)
+        putString(FirebaseAnalytics.Param.CURRENCY, purchase.currency)
+        putParcelableArray(FirebaseAnalytics.Param.ITEMS, arrayOf(item))
+        purchase.transactionId?.let { putString(FirebaseAnalytics.Param.TRANSACTION_ID, it) }
     }
 }
+
+private const val CENTS_PER_UNIT = 100.0
 
 /**
  * O nome vai também como classe. O relatório de telas do GA4 agrupa por título e classe, e sem a classe o Firebase

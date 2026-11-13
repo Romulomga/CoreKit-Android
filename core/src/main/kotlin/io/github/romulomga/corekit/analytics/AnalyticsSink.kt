@@ -17,13 +17,18 @@ public interface AnalyticsSink {
     public fun logPurchase(purchase: PurchaseRevenue)
 }
 
-/** Uma venda confirmada. O valor vai em centavos: nada de ponto flutuante no caminho do dinheiro. */
+/**
+ * Uma venda confirmada, gêmea da `PurchaseRevenue` do iOS. O valor vai em centavos: nada de ponto flutuante no caminho do
+ * dinheiro. Prefira o preço COBRADO (`ProProduct.chargedAtPurchaseCents` no `billing`: zero quando a compra começa com
+ * teste grátis) ao de lista, que conta como receita uma venda que ainda não cobrou nada.
+ */
 public data class PurchaseRevenue(
     val itemId: String,
     val valueCents: Long,
     val currency: String,
     val transactionId: String? = null,
-    val category: String = "pro"
+    val category: String = "pro",
+    val itemName: String = itemId
 )
 
 /** O destino de quem não coleta: debug, testes e builds sem a configuração do serviço. */
