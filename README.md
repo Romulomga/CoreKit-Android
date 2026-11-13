@@ -2,7 +2,9 @@
 
 Base não visual dos apps Android do Rômulo: as peças que evitam os bugs que se repetem de app para app (gravação em
 dobro no toque duplo, formulário perdido na morte do processo, evento contado duas vezes, tela empilhada duas vezes,
-Pro que nasce `false`). O par visual é o [DSKit-Android](https://github.com/Romulomga/DSKit-Android).
+Pro que nasce `false`). O par visual é o [DSKit-Android](https://github.com/Romulomga/DSKit-Android); o gêmeo por
+conceito é o [CoreKit iOS](https://github.com/Romulomga/CoreKit): quando o problema existe nas duas plataformas, a peça
+tem o mesmo nome e a mesma regra nas duas.
 
 ## Módulos
 
@@ -12,13 +14,17 @@ Pro que nasce `false`). O par visual é o [DSKit-Android](https://github.com/Rom
   `TrackAppearance`, `ObserveEvents`.
 - `testing`: `MainDispatcherRule`, `FakeEntitlement`.
 - `billing`: Play Billing. `ProStore` (o direito ao Pro com o último valor confirmado guardado e o estado "ainda não
-  sei"), `PlayBillingGateway`, `FakeBillingGateway`.
+  sei"; `force(kind)` para os builds de teste), `ProProduct.chargedAtPurchaseCents` (o que a compra cobra na hora),
+  `PlayBillingGateway`, `FakeBillingGateway`.
 - `firebase`: `FirebaseMonitoring.start` e `FirebaseAnalyticsSink` (Analytics + Crashlytics atrás do `AnalyticsSink` do
-  `core`, com a coleta desligada fora do build de loja).
+  `core`, com a coleta desligada fora do build de loja), `FirebaseMonitoring.isDebugViewEnabled`.
 - `review`: `StoreReview.request` (In-App Review); a trava de frequência `ReviewGate` fica no `core`.
 - `database`: `KeepCorruptDatabaseFactory`, para o Room não deixar o Android apagar um banco corrompido.
 
-O `core` também traz `AnalyticsSink`, `CollectionPolicy` e `ReviewGate`.
+O `core` também traz `AnalyticsSink`, `PurchaseRevenue`, `CollectionPolicy` e `ReviewGate`.
+
+Só no Android: `SingleFlight`, `AppDispatchers`, `stateInScreen`, `GeneratedFiles`, `SystemZoneClock`, `SavedDraft`,
+`processScoped`, `TrackOnce`, `ObserveEvents` (recriação da Activity e morte do processo não existem no iOS).
 
 ## Uso num app
 
@@ -98,12 +104,28 @@ val store = ProStore(
 
 // Na abertura: a primeira tela espera o direito, em vez de desenhar o teaser para quem paga.
 store.awaitResolved()
+
+// Build de teste: o grátis numa conta que tem o vitalício.
+store.force(EntitlementKind.NONE)
 ```
 
-Analytics que não coleta em debug:
+A receita da venda com o preço cobrado, não o de lista (zero quando a compra começa com teste grátis):
 
 ```kotlin
-val sink = FirebaseMonitoring.start(context, collect = CollectionPolicy.shouldCollect(BuildConfig.DEBUG))
+val plan = product.plan
+
+sink.logPurchase(PurchaseRevenue(plan.productId, product.chargedAtPurchaseCents, product.currencyCode, itemName = plan.analyticsName))
+```
+
+Analytics que não coleta em debug, salvo com o DebugView ligado para o app
+(`adb shell setprop debug.firebase.analytics.app <pacote>`; `.none.` desliga):
+
+```kotlin
+val collect = CollectionPolicy.shouldCollect(
+    isDebugBuild = BuildConfig.DEBUG,
+    debugOptIn = BuildConfig.DEBUG && FirebaseMonitoring.isDebugViewEnabled(context)
+)
+val sink = FirebaseMonitoring.start(context, collect)
 ```
 
 ## Verificação

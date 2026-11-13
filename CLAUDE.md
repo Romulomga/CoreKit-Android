@@ -50,10 +50,10 @@ here. CoreKit does not depend on DSKit.
 | `processScoped` | compose | Saved position of a flow whose data lives in memory does not outlive the process. |
 | `ObserveEvents` | compose | One-shot events are collected only while the screen is visible. |
 | `MainDispatcherRule`, `FakeEntitlement` | testing | Shared test support instead of a copy per app. |
-| `AnalyticsSink`, `CollectionPolicy` | core | Screens never see an analytics SDK; only store builds in real use collect. |
+| `AnalyticsSink`, `CollectionPolicy` | core | Screens never see an analytics SDK; only store builds in real use collect (a debug build only on explicit opt-in, an automated run never). |
 | `ReviewGate` | core | The review prompt is asked once per version (and, optionally, N days apart). |
-| `ProStore`, `BillingGateway` | billing | Only a complete Play answer changes the right; the last confirmed one is kept; purchases are always acknowledged. |
-| `FirebaseMonitoring`, `FirebaseAnalyticsSink` | firebase | The only place that knows the Firebase SDK. |
+| `ProStore`, `BillingGateway` | billing | Only a complete Play answer (or the purchase it just confirmed) changes the right; the last confirmed one is kept and never lands after an answer; purchases are always acknowledged. |
+| `FirebaseMonitoring`, `FirebaseAnalyticsSink` | firebase | The only place that knows the Firebase SDK; `screen_view` and `purchase` carry what GA4's reports read, like the iOS engine. |
 | `StoreReview` | review | Mark "asked" only after the Play call returned. |
 
 What stays in each app around these: its typed events (names are product decisions), its plan ids, where the confirmed
