@@ -54,8 +54,17 @@ public class CompositeAnalyticsSink(private val sinks: List<AnalyticsSink>) : An
 
 /**
  * Quem coleta: só o build de loja em uso real. Cada instalação de desenvolvimento ou rodada de teste automatizado
- * viraria um `first_open` e um funil falso nos dados de produção.
+ * viraria um `first_open` e um funil falso nos dados de produção. Gêmeo do `CollectionPolicy` do CoreKit iOS.
  */
 public object CollectionPolicy {
-    public fun shouldCollect(isDebugBuild: Boolean, isAutomatedRun: Boolean = false): Boolean = !isDebugBuild && !isAutomatedRun
+    /**
+     * [debugOptIn] é o pedido explícito de quem desenvolve para um build de debug coletar, para conferir os eventos (o
+     * `--analytics-debug` do iOS). Com o Firebase, passe `FirebaseMonitoring.isDebugViewEnabled`: os eventos vão só
+     * para o DebugView e ficam fora dos relatórios. A rodada automatizada nunca coleta, nem com ele.
+     */
+    public fun shouldCollect(isDebugBuild: Boolean, isAutomatedRun: Boolean = false, debugOptIn: Boolean = false): Boolean = when {
+        isAutomatedRun -> false
+        isDebugBuild -> debugOptIn
+        else -> true
+    }
 }

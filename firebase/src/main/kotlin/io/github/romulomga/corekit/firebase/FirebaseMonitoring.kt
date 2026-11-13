@@ -1,5 +1,6 @@
 package io.github.romulomga.corekit.firebase
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.os.Bundle
 import com.google.firebase.FirebaseApp
@@ -24,6 +25,25 @@ public object FirebaseMonitoring {
 
         return if (collect) FirebaseAnalyticsSink(context) else NoopAnalyticsSink
     }
+
+    /**
+     * Se o DebugView do Firebase está ligado para este app: o `--analytics-debug` do iOS. Passe em
+     * `CollectionPolicy.shouldCollect(debugOptIn = …)`, e um build de debug passa a coletar para conferir os eventos; o
+     * Firebase manda o que vem em modo debug só para o DebugView, fora dos relatórios. É a chave que o Firebase já lê:
+     * `adb shell setprop debug.firebase.analytics.app <pacote>`, e `.none.` no lugar do pacote para desligar. Vale a
+     * partir da próxima abertura do app.
+     */
+    public fun isDebugViewEnabled(context: Context): Boolean = systemProperty(DEBUG_VIEW_PROPERTY) == context.packageName
+
+    // Propriedade do sistema não tem leitura na API pública. Sem a classe ou o método, vale "desligado".
+    @SuppressLint("PrivateApi")
+    private fun systemProperty(name: String): String? = try {
+        Class.forName("android.os.SystemProperties").getMethod("get", String::class.java).invoke(null, name) as? String
+    } catch (_: ReflectiveOperationException) {
+        null
+    }
+
+    private const val DEBUG_VIEW_PROPERTY = "debug.firebase.analytics.app"
 }
 
 /**
