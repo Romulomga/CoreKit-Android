@@ -84,8 +84,9 @@ public data class ProProduct(
     /**
      * O que a Play cobra no ato da compra: zero quando ela começa com teste grátis, senão o preço. É o valor da receita
      * da venda (o gêmeo do `StoreTransaction.price` do iOS); o de lista contaria como receita um trial que não cobrou nada.
+     * O padrão sai de [freeTrial], para um produto montado à mão (um teste, um fake) não contradizer o próprio trial.
      */
-    val chargedAtPurchaseMicros: Long = priceMicros
+    val chargedAtPurchaseMicros: Long = if (freeTrial != null) 0 else priceMicros
 ) {
     public val priceCents: Long get() = priceMicros / MICROS_PER_CENT
 

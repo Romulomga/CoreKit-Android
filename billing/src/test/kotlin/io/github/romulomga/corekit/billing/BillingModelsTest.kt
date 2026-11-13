@@ -47,6 +47,13 @@ class BillingModelsTest {
     }
 
     @Test
+    fun `a product built by hand with a free trial charges nothing at once`() {
+        val product = ProProduct(ProPlan("pro.yearly", ProPlanType.SUBSCRIPTION), "R$ 49,90", 49_900_000, "BRL", Period.ofWeeks(1))
+
+        assertEquals(0L, product.chargedAtPurchaseCents)
+    }
+
+    @Test
     fun `a one-time purchase charges its price`() {
         val lifetime = ProProduct(ProPlan("pro.lifetime", ProPlanType.LIFETIME), "R$ 79,90", 79_900_000, "BRL")
 
