@@ -55,10 +55,10 @@ public interface ProStoreObserver {
 }
 
 /**
- * O direito ao Pro pela Play. Três regras, cada uma de um incidente:
+ * O direito ao Pro pela Play, gêmeo do `ProStore` do iOS. Cada regra vem de um incidente:
  *
  * - O último direito confirmado fica guardado, e uma consulta que FALHA não tira o Pro de ninguém. Só uma resposta
- *   completa da Play muda o direito.
+ *   completa da Play muda o direito, ou a compra que ela acabou de confirmar, mesmo que a consulta seguinte falhe.
  * - Até saber, o estado é [EntitlementState.UNKNOWN], não "grátis": quem paga não vê teaser nem conta impressão de
  *   paywall na abertura. Sem memória (primeira abertura), a espera pela Play tem teto ([resolveTimeout]).
  * - Compra reconhecida sempre: a Play estorna em 3 dias a que não for.
@@ -171,8 +171,9 @@ public class ProStore(
             purchased?.let { observer.onPurchased(it) }
 
             // Compra pendente (boleto) não dá o direito ainda; a resposta completa da Play decide.
-            acknowledge(update.purchases)
-            query()
+            val delivered = acknowledge(update.purchases)
+
+            query(evidence = delivered.filter { it.isPurchased })
 
             finish(PurchaseOutcome(if (purchased != null) PurchaseResult.PURCHASED else PurchaseResult.PENDING, purchased))
         }
@@ -193,17 +194,39 @@ public class ProStore(
         return outcome
     }
 
-    /** `false` se a Play não deu uma resposta completa: nada muda. */
-    private suspend fun query(): Boolean {
+    /**
+     * `false` se a Play não deu uma resposta completa: nada muda, salvo a compra que ela acabou de confirmar
+     * ([evidence]). Essa vale mesmo que a consulta falhe ou ainda não a traga: quem acabou de pagar não fica no grátis
+     * até a próxima volta ao app (no iOS, a transação verificada entra do mesmo jeito).
+     */
+    private suspend fun query(evidence: List<PlayPurchase> = emptyList()): Boolean {
         if (forced != null) return true
 
         return refreshLock.withLock {
             val purchases = gateway.queryPurchases()
 
-            if (purchases == null) reportKeptPro() else confirm(purchases)
+            when {
+                purchases != null -> confirm(purchases + evidence.filter { new -> purchases.none { it.isSameAs(new) } })
+                !grant(evidence) -> reportKeptPro()
+            }
 
             purchases != null
         }
+    }
+
+    /** Sem a resposta da Play, a compra recém-confirmada só pode subir o direito: as outras compras da conta não vieram. */
+    private suspend fun grant(evidence: List<PlayPurchase>): Boolean {
+        val proven = EntitlementKind.resolve(evidence.flatMap { it.productIds }.mapNotNull(::planOf))
+
+        if (proven == EntitlementKind.NONE) return false
+
+        // A ordem do enum é a do direito: vitalício vence assinatura, que vence nada.
+        val kind = maxOf(_kind.value, proven)
+
+        apply(kind)
+        memory.save(kind)
+
+        return true
     }
 
     private suspend fun confirm(purchases: List<PlayPurchase>) {
@@ -218,8 +241,11 @@ public class ProStore(
         observer.onConfirmed(active)
     }
 
-    private suspend fun acknowledge(purchases: List<PlayPurchase>) {
-        purchases.filter { it.isPurchased && !it.isAcknowledged }.forEach { gateway.acknowledge(it) }
+    /** Devolve as compras com o reconhecimento que deu certo já marcado, para a mesma compra não ser reconhecida duas vezes. */
+    private suspend fun acknowledge(purchases: List<PlayPurchase>): List<PlayPurchase> = purchases.map { purchase ->
+        val done = purchase.isPurchased && !purchase.isAcknowledged && gateway.acknowledge(purchase)
+
+        if (done) purchase.copy(isAcknowledged = true) else purchase
     }
 
     private fun apply(resolved: EntitlementKind) {
@@ -244,4 +270,6 @@ public class ProStore(
     }
 
     private fun planOf(productId: String): ProPlan? = plans.firstOrNull { it.productId == productId }
+
+    private fun PlayPurchase.isSameAs(other: PlayPurchase): Boolean = purchaseToken == other.purchaseToken
 }

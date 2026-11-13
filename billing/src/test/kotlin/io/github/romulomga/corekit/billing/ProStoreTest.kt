@@ -182,6 +182,57 @@ class ProStoreTest {
     }
 
     @Test
+    fun `a purchase the Play confirmed gives Pro even when the next query fails`() = runTest {
+        val store = store()
+
+        store.start()
+
+        val bought = purchase(yearly.productId, "bought", acknowledged = false)
+
+        gateway.purchases = null
+        gateway.nextPurchase = BillingUpdate(BillingUpdateCode.OK, listOf(bought))
+
+        assertEquals(PurchaseResult.PURCHASED, store.purchase(Activity(), product(yearly)).result)
+        assertEquals(EntitlementState.PRO, store.state.value)
+        assertEquals(EntitlementKind.SUBSCRIPTION, memory.saved)
+        assertEquals(0, observer.keptWithoutAnswer)
+    }
+
+    @Test
+    fun `a purchase missing from the next answer still counts, acknowledged once`() = runTest {
+        val store = store()
+
+        store.start()
+
+        val bought = purchase(yearly.productId, "bought", acknowledged = false)
+
+        gateway.purchases = emptyList()
+        gateway.nextPurchase = BillingUpdate(BillingUpdateCode.OK, listOf(bought))
+
+        store.purchase(Activity(), product(yearly))
+
+        assertEquals(EntitlementState.PRO, store.state.value)
+        assertEquals(EntitlementKind.SUBSCRIPTION, memory.saved)
+        assertEquals(listOf("bought"), observer.confirmed.last().map { it.purchaseToken })
+        assertEquals(listOf("bought"), gateway.acknowledged)
+    }
+
+    @Test
+    fun `a purchase without an answer never lowers the right in use`() = runTest {
+        memory.saved = EntitlementKind.LIFETIME
+        gateway.purchases = null
+
+        val store = store()
+
+        store.start()
+        gateway.nextPurchase = BillingUpdate(BillingUpdateCode.OK, listOf(purchase(yearly.productId, "bought")))
+        store.purchase(Activity(), product(yearly))
+
+        assertEquals(EntitlementKind.LIFETIME, store.kind.value)
+        assertEquals(EntitlementKind.LIFETIME, memory.saved)
+    }
+
+    @Test
     fun `a cancelled purchase changes nothing`() = runTest {
         val store = store()
 
