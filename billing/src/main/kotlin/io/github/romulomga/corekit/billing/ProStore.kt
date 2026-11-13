@@ -97,7 +97,11 @@ public class ProStore(
 
     /** No lançamento: o último direito confirmado, a consulta à Play e o catálogo. */
     public suspend fun start() {
-        if (forced == null) memory.load()?.let(::apply)
+        val remembered = if (forced == null) memory.load() else null
+
+        // O guardado é uma resposta velha: se a Play respondeu durante a leitura (a volta ao primeiro plano, uma compra
+        // fora do fluxo), ela vence. No iOS a memória é lida antes de qualquer consulta, então isso nunca acontece lá.
+        remembered?.let { refreshLock.withLock { if (_state.value == EntitlementState.UNKNOWN) apply(it) } }
 
         coroutineScope {
             val query = async { query() }

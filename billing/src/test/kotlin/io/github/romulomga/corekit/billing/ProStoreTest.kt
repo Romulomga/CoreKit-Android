@@ -92,6 +92,29 @@ class ProStoreTest {
     }
 
     @Test
+    fun `an answer that lands while the memory is read wins over it`() = runTest {
+        val reading = CompletableDeferred<Unit>()
+
+        memory.saved = EntitlementKind.SUBSCRIPTION
+        memory.whileReading = { reading.await() }
+
+        val store = store()
+        val start = launch { store.start() }
+
+        runCurrent()
+
+        // A volta ao primeiro plano pergunta à Play durante a leitura: a assinatura venceu. Depois a Play para de responder.
+        assertTrue(store.refresh())
+
+        gateway.purchases = null
+        reading.complete(Unit)
+        start.join()
+
+        assertEquals(EntitlementState.FREE, store.state.value)
+        assertEquals(EntitlementKind.NONE, memory.saved)
+    }
+
+    @Test
     fun `without memory a slow Play resolves as free after the timeout and Pro when it answers`() = runTest {
         val gate = CompletableDeferred<Unit>()
 
@@ -386,7 +409,16 @@ class ProStoreTest {
     private class FakeMemory : EntitlementMemory {
         var saved: EntitlementKind? = null
 
-        override suspend fun load(): EntitlementKind? = saved
+        /** Roda entre ler e devolver: um disco lento devolve o que havia quando a leitura começou. */
+        var whileReading: suspend () -> Unit = {}
+
+        override suspend fun load(): EntitlementKind? {
+            val read = saved
+
+            whileReading()
+
+            return read
+        }
 
         override suspend fun save(kind: EntitlementKind) {
             saved = kind
