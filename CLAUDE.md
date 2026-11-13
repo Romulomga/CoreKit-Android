@@ -12,8 +12,11 @@ here. CoreKit does not depend on DSKit.
 ## Decisions (owner interview, 2026-11-09)
 
 - **Repository**: public, `github.com/Romulomga/CoreKit-Android`, MIT. No secrets, no app-specific code or names.
-- **Android only**: no iOS twin. The problems it solves are Android's (Activity recreation, process death, async saves);
-  on iOS the reference for patterns stays MagicPick.
+- **iOS twin by concept** (changed 2026-11-13; it was "Android only"): CoreKit iOS (`~/CoreKit`,
+  `github.com/Romulomga/CoreKit`). When a problem exists on both platforms the piece has the same name and the same
+  rule on both (`Entitlement` with an unknown state, `ReviewGate`, `CollectionPolicy`, the navigator that doesn't push
+  the same destination twice), and a change to a shared concept is evaluated on the other side in the same round.
+  Android-only problems (Activity recreation, process death) stay here alone, and that is said.
 - **minSdk 30**, compileSdk 37, JDK 21. AGP/Kotlin must match DSKit-Android and the apps (an `includeBuild` is one build).
 - **Modules**: `:core` (pure Kotlin), `:compose` (Android + Compose), `:testing` (fakes and rules). Pieces that pull a
   heavy SDK get their own module so an app takes only what it uses: `:billing` (Play Billing), `:firebase` (Analytics +
