@@ -55,10 +55,7 @@ public class FirebaseAnalyticsSink(context: Context) : AnalyticsSink {
 
     override fun log(name: String, parameters: Map<String, Any>): Unit = analytics.logEvent(name, parameters.toBundle())
 
-    override fun screen(name: String): Unit = analytics.logEvent(
-        FirebaseAnalytics.Event.SCREEN_VIEW,
-        Bundle().apply { putString(FirebaseAnalytics.Param.SCREEN_NAME, name) }
-    )
+    override fun screen(name: String): Unit = analytics.logEvent(FirebaseAnalytics.Event.SCREEN_VIEW, screenViewParameters(name))
 
     override fun setUserProperty(name: String, value: String?): Unit = analytics.setUserProperty(name, value)
 
@@ -88,6 +85,16 @@ public class FirebaseAnalyticsSink(context: Context) : AnalyticsSink {
     private companion object {
         const val CENTS_PER_UNIT = 100.0
     }
+}
+
+/**
+ * O nome vai também como classe. O relatório de telas do GA4 agrupa por título e classe, e sem a classe o Firebase
+ * deixa a da Activity (ou "(not set)"): num app Compose de uma Activity só, toda tela cairia na mesma linha, e o iOS, que
+ * manda o nome nos dois, deixaria de ser comparável.
+ */
+internal fun screenViewParameters(name: String): Bundle = Bundle().apply {
+    putString(FirebaseAnalytics.Param.SCREEN_NAME, name)
+    putString(FirebaseAnalytics.Param.SCREEN_CLASS, name)
 }
 
 /**
