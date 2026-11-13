@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.4 - 2026-11-13
+
+- `billing`: o padrão de `ProProduct.chargedAtPurchaseMicros` segue o `freeTrial`. Um produto montado à mão com teste
+  grátis (o fixture de um teste, um fake) informava o preço cheio como cobrado; o da Play já vinha certo.
+
 ## 0.1.3 - 2026-11-13
 
 Rodada de paridade com o CoreKit iOS: o que o iOS resolveu e também acontecia no Android.
