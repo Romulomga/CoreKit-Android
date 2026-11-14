@@ -4,6 +4,7 @@ import android.os.Bundle
 import com.google.firebase.analytics.FirebaseAnalytics.Param
 import io.github.romulomga.corekit.analytics.PurchaseRevenue
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -41,6 +42,24 @@ class FirebaseParametersTest {
         val parameters = purchaseParameters(purchase)
 
         assertEquals("yearly", parameters.items().single().getString(Param.ITEM_NAME))
+    }
+
+    @Test
+    fun `a purchase without a transaction id leaves the parameter out`() {
+        val parameters = purchaseParameters(PurchaseRevenue(itemId = "yearly", valueCents = 0, currency = "BRL"))
+
+        assertEquals(0.0, parameters.getDouble(Param.VALUE), 0.0)
+        assertFalse(parameters.containsKey(Param.TRANSACTION_ID))
+    }
+
+    @Test
+    fun `a flag goes as text and a number stays a number`() {
+        val parameters = mapOf("has_logo" to true, "item_count" to 2, "share" to 0.5, "kind" to "receipt").toBundle()
+
+        assertEquals("true", parameters.getString("has_logo"))
+        assertEquals(2L, parameters.getLong("item_count"))
+        assertEquals(0.5, parameters.getDouble("share"), 0.0)
+        assertEquals("receipt", parameters.getString("kind"))
     }
 
     @Suppress("DEPRECATION")
