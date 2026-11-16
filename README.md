@@ -11,6 +11,7 @@ tem o mesmo nome e a mesma regra nas duas.
 - `core`: Kotlin puro. `SingleFlight`, `Entitlement`, `AppDispatchers`, `stateInScreen`, `GeneratedFiles`,
   `SystemZoneClock`.
 - `compose`: Android + Compose. `Navigator`/`NavigationState` (Navigation 3), `SavedDraft`, `processScoped`, `TrackOnce`,
+  `LaunchedOnce` (a carga inicial da tela roda uma vez por entrada na pilha, e de novo só se foi cancelada),
   `TrackAppearance`, `ObserveEvents`.
 - `testing`: `MainDispatcherRule`, `FakeEntitlement`.
 - `billing`: Play Billing. `ProStore` (o direito ao Pro com o último valor confirmado guardado e o estado "ainda não
