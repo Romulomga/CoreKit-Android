@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.1.6 - 2026-11-16
+
+- `compose`: `LaunchedOnce` guarda a marca de "já carregou" no `ViewModelStoreOwner` (o da entrada, com o
+  `rememberViewModelStoreNavEntryDecorator`, ou o da Activity), e não mais no estado salvo. Depois da morte do processo
+  ou com "Não manter atividades", o estado salvo voltava dizendo que a carga terminou, ao lado de uma ViewModel nova e
+  vazia: a carga não rodava e a tela ficava presa no esqueleto. Agora a marca some junto com a ViewModel, e o estado
+  salvo guarda só um id do ponto de chamada (duas cargas no mesmo dono não dividem a marca). A chamada continua
+  `LaunchedOnce(key) { }`; o novo parâmetro opcional `owner` aceita outro dono. O contorno
+  `key(viewModel) { LaunchedOnce(viewModel) { … } }` deixa de ser necessário. O gêmeo iOS (`onFirstAppear` assíncrono)
+  não muda: o `@State` dele não sobrevive à morte do processo, então a marca já some junto com a tela.
+- `testing`: `ArchitectureCheck` e `ArchitectureRule`, o porte do CoreKit iOS com o mesmo contrato: uma regra é um nome,
+  um filtro pelo caminho relativo à raiz e uma expressão regular proibida; linhas de comentário são puladas (aqui também
+  as do KDoc, que começam com `*`); pastas proibidas entram no relatório; a saída é "caminho:linha: regra: código",
+  ordenada e sem repetição. Lê os `.kt` sob a raiz. `entityTypeNames` lê as classes `@Entity` do Room, gêmeo do
+  `modelTypeNames` (`@Model`) do iOS, para a regra "tela não segura objeto do banco".
+
 ## 0.1.5 - 2026-11-16
 
 - `compose`: `LaunchedOnce`, para a carga inicial da tela. O `LaunchedEffect(viewModel) { viewModel.load() }` carregava

@@ -13,7 +13,8 @@ tem o mesmo nome e a mesma regra nas duas.
 - `compose`: Android + Compose. `Navigator`/`NavigationState` (Navigation 3), `SavedDraft`, `processScoped`, `TrackOnce`,
   `LaunchedOnce` (a carga inicial da tela roda uma vez por entrada na pilha, e de novo só se foi cancelada),
   `TrackAppearance`, `ObserveEvents`.
-- `testing`: `MainDispatcherRule`, `FakeEntitlement`.
+- `testing`: `MainDispatcherRule`, `FakeEntitlement`, `ArchitectureCheck` (o teste que lê os `.kt` do app e barra o
+  desvio de arquitetura, gêmeo do CoreKit iOS).
 - `billing`: Play Billing. `ProStore` (o direito ao Pro com o último valor confirmado guardado e o estado "ainda não
   sei"; `force(kind)` para os builds de teste), `ProProduct.chargedAtPurchaseCents` (o que a compra cobra na hora),
   `PlayBillingGateway`, `FakeBillingGateway`.
@@ -28,9 +29,7 @@ Só no Android: `AppDispatchers`, `stateInScreen`, `GeneratedFiles`, `SystemZone
 `processScoped`, `TrackOnce`, `ObserveEvents` (recriação da Activity e morte do processo não existem no iOS).
 
 Só no CoreKit iOS (0.1.4): `AsyncStream.observing`, o fluxo de valores das telas (aqui o mesmo trabalho é o `Flow` do
-Room mapeado para o estado da tela com `stateInScreen`); `eventually` (aqui, `runTest` com o `MainDispatcherRule`); e
-`ArchitectureCheck`, o teste que lê o código do app e barra o desvio de arquitetura, que entra aqui, com o mesmo nome e
-as mesmas regras, quando houver o primeiro app Android no padrão.
+Room mapeado para o estado da tela com `stateInScreen`), e `eventually` (aqui, `runTest` com o `MainDispatcherRule`).
 
 ## Uso num app
 
@@ -90,6 +89,29 @@ class DoseViewModel(handle: SavedStateHandle) : ViewModel() {
 }
 ```
 
+A carga inicial da tela, uma vez por entrada (de novo só se foi cancelada, ou depois da morte do processo):
+
+```kotlin
+LaunchedOnce(viewModel) { viewModel.load() }
+```
+
+O teste de arquitetura do app (a saída é "caminho:linha: regra: código"):
+
+```kotlin
+@Test
+fun screensFollowTheArchitecture() {
+    val root = File("src/main/kotlin")
+    val entities = ArchitectureCheck.entityTypeNames(root).joinToString("|")
+    check(entities.isNotEmpty())
+
+    val rules = listOf(
+        ArchitectureRule("no entity in screens", files = { it.endsWith("Screen.kt") }, forbidding = """\b($entities)\b""")
+    )
+
+    assertEquals(emptyList<String>(), ArchitectureCheck.violations(root, rules, forbiddenFolders = setOf("screens")))
+}
+```
+
 Evento de tela uma vez por visita, e eventos de uso único só com a tela à vista:
 
 ```kotlin
@@ -137,5 +159,5 @@ val sink = FirebaseMonitoring.start(context, collect)
 ## Verificação
 
 ```sh
-./gradlew assemble ktlint lintDebug :core:test testDebugUnitTest
+./gradlew assemble ktlint lintDebug :core:test :testing:test testDebugUnitTest
 ```

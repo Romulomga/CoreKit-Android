@@ -49,7 +49,9 @@ here. CoreKit does not depend on DSKit.
 | `TrackAppearance` | compose | For funnels compared with iOS: counts like `.onAppear` (again on return), never on Activity recreation. |
 | `processScoped` | compose | Saved position of a flow whose data lives in memory does not outlive the process. |
 | `ObserveEvents` | compose | One-shot events are collected only while the screen is visible. |
+| `LaunchedOnce` | compose | A screen's first load runs once per stack entry; its mark lives in the `ViewModelStoreOwner`, so process death loads again. |
 | `MainDispatcherRule`, `FakeEntitlement` | testing | Shared test support instead of a copy per app. |
+| `ArchitectureCheck`, `ArchitectureRule` | testing | A test reads the app's `.kt` files and fails with "path:line: rule: code" on drift (comment lines skipped, forbidden folders, `entityTypeNames` for Room). |
 | `AnalyticsSink`, `CollectionPolicy` | core | Screens never see an analytics SDK; only store builds in real use collect (a debug build only on explicit opt-in, an automated run never). |
 | `ReviewGate` | core | The review prompt is asked once per version (and, optionally, N days apart). |
 | `ProStore`, `BillingGateway` | billing | Only a complete Play answer (or the purchase it just confirmed) changes the right; the last confirmed one is kept and never lands after an answer; purchases are always acknowledged. |
@@ -57,8 +59,8 @@ here. CoreKit does not depend on DSKit.
 | `StoreReview` | review | Mark "asked" only after the Play call returned. |
 
 iOS-only pieces in CoreKit 0.1.4, evaluated here on 2026-11-16: `AsyncStream.observing` (here, Room's `Flow` mapped to
-the screen state and collected with `stateInScreen`), `eventually` (here, `runTest` and `MainDispatcherRule`), and
-`ArchitectureCheck` (enters here, same name and rules, with the first Android app built in the owner's pattern).
+the screen state and collected with `stateInScreen`) and `eventually` (here, `runTest` and `MainDispatcherRule`).
+`ArchitectureCheck` entered in 0.1.6 with the same name and contract (`entityTypeNames` instead of `modelTypeNames`).
 
 What stays in each app around these: its typed events (names are product decisions), its plan ids, where the confirmed
 right is stored (`EntitlementMemory` over the app's own keys), purchase analytics and anything trial-related
@@ -76,7 +78,7 @@ right is stored (`EntitlementMemory` over the app's own keys), purchase analytic
 ## Verify
 
 ```sh
-./gradlew assemble ktlint lintDebug :core:test testDebugUnitTest
+./gradlew assemble ktlint lintDebug :core:test :testing:test testDebugUnitTest
 ```
 
 `ktlintFormat` fixes style. Release: bump `VERSION_NAME` in `gradle.properties`, update `CHANGELOG.md`, tag `x.y.z`.
