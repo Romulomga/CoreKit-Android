@@ -57,6 +57,7 @@ dependencies {
     api(libs.compose.runtime)
     api(libs.androidx.navigation3.runtime)
     api(libs.androidx.lifecycle.viewmodel.savedstate)
+    api(libs.androidx.lifecycle.viewmodel.compose)
     api(libs.kotlinx.serialization.json)
     implementation(libs.compose.runtime.saveable)
     implementation(libs.compose.ui)
