@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.5 - 2026-11-16
+
+- `compose`: `LaunchedOnce`, para a carga inicial da tela. O `LaunchedEffect(viewModel) { viewModel.load() }` carregava
+  de novo a cada volta à tela e a cada recriação da Activity; aqui roda uma vez por entrada na pilha. Sair antes de
+  terminar cancela a carga, e a próxima aparição roda de novo. Gêmeo do `onFirstAppear` assíncrono do CoreKit iOS.
+
 ## 0.1.4 - 2026-11-13
 
 - `billing`: o padrão de `ProProduct.chargedAtPurchaseMicros` segue o `freeTrial`. Um produto montado à mão com teste
