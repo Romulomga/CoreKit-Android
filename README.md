@@ -23,7 +23,7 @@ tem o mesmo nome e a mesma regra nas duas.
 
 O `core` também traz `AnalyticsSink`, `PurchaseRevenue`, `CollectionPolicy` e `ReviewGate`.
 
-Só no Android: `SingleFlight`, `AppDispatchers`, `stateInScreen`, `GeneratedFiles`, `SystemZoneClock`, `SavedDraft`,
+Só no Android: `AppDispatchers`, `stateInScreen`, `GeneratedFiles`, `SystemZoneClock`, `SavedDraft`,
 `processScoped`, `TrackOnce`, `ObserveEvents` (recriação da Activity e morte do processo não existem no iOS).
 
 ## Uso num app

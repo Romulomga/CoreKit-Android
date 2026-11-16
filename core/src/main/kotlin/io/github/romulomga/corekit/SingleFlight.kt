@@ -10,8 +10,8 @@ import kotlinx.coroutines.launch
 
 /**
  * Uma ação que grava roda uma vez por vez: o segundo toque, dado enquanto a primeira gravação ainda roda, é ignorado.
- * No iOS a gravação é síncrona e o botão some na hora; no Android ela é uma corrotina, e sem esta trava dois toques
- * rápidos gravam dois registros.
+ * A gravação é uma corrotina, e sem esta trava dois toques rápidos gravam dois registros. Gêmeo do `SingleFlight` do
+ * CoreKit iOS.
  *
  * A trava fecha de forma síncrona, antes de a corrotina começar, e abre quando ela termina, falha ou é cancelada.
  * Ligue [isRunning] ao botão (`DSButton(loading = …)` ou `enabled = !running`). Num estado de tela montado com
