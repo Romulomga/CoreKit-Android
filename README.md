@@ -27,6 +27,11 @@ O `core` também traz `AnalyticsSink`, `PurchaseRevenue`, `CollectionPolicy` e `
 Só no Android: `AppDispatchers`, `stateInScreen`, `GeneratedFiles`, `SystemZoneClock`, `SavedDraft`,
 `processScoped`, `TrackOnce`, `ObserveEvents` (recriação da Activity e morte do processo não existem no iOS).
 
+Só no CoreKit iOS (0.1.4): `AsyncStream.observing`, o fluxo de valores das telas (aqui o mesmo trabalho é o `Flow` do
+Room mapeado para o estado da tela com `stateInScreen`); `eventually` (aqui, `runTest` com o `MainDispatcherRule`); e
+`ArchitectureCheck`, o teste que lê o código do app e barra o desvio de arquitetura, que entra aqui, com o mesmo nome e
+as mesmas regras, quando houver o primeiro app Android no padrão.
+
 ## Uso num app
 
 Como submódulo preso a uma tag, igual ao DSKit:

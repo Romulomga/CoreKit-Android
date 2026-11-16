@@ -56,6 +56,10 @@ here. CoreKit does not depend on DSKit.
 | `FirebaseMonitoring`, `FirebaseAnalyticsSink` | firebase | The only place that knows the Firebase SDK; `screen_view` and `purchase` carry what GA4's reports read, like the iOS engine. |
 | `StoreReview` | review | Mark "asked" only after the Play call returned. |
 
+iOS-only pieces in CoreKit 0.1.4, evaluated here on 2026-11-16: `AsyncStream.observing` (here, Room's `Flow` mapped to
+the screen state and collected with `stateInScreen`), `eventually` (here, `runTest` and `MainDispatcherRule`), and
+`ArchitectureCheck` (enters here, same name and rules, with the first Android app built in the owner's pattern).
+
 What stays in each app around these: its typed events (names are product decisions), its plan ids, where the confirmed
 right is stored (`EntitlementMemory` over the app's own keys), purchase analytics and anything trial-related
 (`ProStoreObserver`), and WHEN to ask for a review.
