@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.11 - 2026-11-17
+
+- `core`: blocos de cache para o assunto "online" (o dado é do servidor e só faz sentido com ele), vindos do Homer e
+  generalizados: `KeyedResource` (um valor por chave), `PagedResource` (listas paginadas), `Loadable`/`LoadStatus`,
+  `Slice`, `SessionCache`/`SnapshotCache` com `values`, e `SessionCaches` (o logout esvazia todos). A falha agora é do
+  app: cada bloco recebe `mapError: (Exception) -> F?`, e `null` diz que foi um cancelamento da camada de rede do app,
+  que nunca vira falha. Gêmeos dos blocos do CoreKit iOS 0.1.12.
+
 ## 0.1.10 - 2026-11-17
 
 - `core`: `AnalyticsSink.setUserId` (quem usa o app, num app com conta; `null` no logout), `setCrashKey` e

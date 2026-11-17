@@ -8,7 +8,8 @@ tem o mesmo nome e a mesma regra nas duas.
 
 ## Módulos
 
-- `core`: Kotlin puro. `SingleFlight`, `Entitlement`, `AppDispatchers`, `stateInScreen`, `GeneratedFiles`,
+- `core`: Kotlin puro. `SingleFlight`, os blocos de cache de dado do servidor (`KeyedResource`, `PagedResource`,
+  `SessionCache`, `SessionCaches`), `Entitlement`, `AppDispatchers`, `stateInScreen`, `GeneratedFiles`,
   `SystemZoneClock`.
 - `compose`: Android + Compose. `Navigator`/`NavigationState` (Navigation 3), `SavedDraft`, `processScoped`, `TrackOnce`,
   `LaunchedOnce` (a carga inicial da tela roda uma vez por entrada na pilha, e de novo só se foi cancelada),
