@@ -30,6 +30,10 @@ tem o mesmo nome e a mesma regra nas duas.
   padrão; `NO_RETRY` tira um GET), `ConnectivityInterceptor` + `AndroidNetworkMonitor` (nada sai sem rede),
   `redactedHttpLogging` + `UrlRedaction` (log sem credencial, sem query e sem os trechos de URL que o app marca como
   dado) e `ApiCaller` (o limite entre o transporte e o erro do app, com o logout central e o cancelamento intacto).
+- `sync`: gêmeo do `CoreKitSync` do iOS. `SyncSubject`, `Outbox`/`PendingChange` (a fila, tabela do app no Room,
+  gravada na mesma transação do registro), `SyncEngine` (as mesmas regras do iOS, com `status: StateFlow`) e `SyncWork`
+  (agendamento no WorkManager, único por nome, só com rede, espera crescente; o Worker é do app e devolve
+  `engine.runAsWork()`).
 
 O `core` também traz `AnalyticsSink` (com `setUserId` para app com conta, `setCrashKey` e `addBreadcrumb` para o
 relatório de falha; nunca e-mail, nome nem o que o usuário digitou), `UserSwitchSink` (a chave "Enviar estatísticas" e o erro sem mensagem), `PurchaseRevenue`, `CollectionPolicy` e `ReviewGate`.

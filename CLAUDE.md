@@ -81,7 +81,10 @@ right is stored (`EntitlementMemory` over the app's own keys), purchase analytic
 - Blank line between logical blocks. No comments that restate the code.
 - A new piece enters only when at least two apps need it; otherwise it stays in the app. Exception asked by the owner
   (2026-11-17): the `network` module (the generic part of Homer's `core/network`) entered with Homer alone, twin of
-  iOS's `CoreKitNetwork`.
+  iOS's `CoreKitNetwork`. Third (2026-11-17): the cache blocks in `core` entered with Homer alone, and the `sync`
+  module with no app yet, because the skeleton shows the three ways of a subject (offline, online, offline-first with
+  sync) and every new app starts from it. The sync engine's send side is proven only against doubles until the first
+  app with a backend uses it.
 
 ## Verify
 

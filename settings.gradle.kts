@@ -42,4 +42,5 @@ include(
     ":database",
     ":network",
     ":mixpanel",
+    ":sync",
 )

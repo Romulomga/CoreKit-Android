@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.12 - 2026-11-17
+
+- `sync` (novo módulo, WorkManager 2.11): o sync de um assunto offline-first, gêmeo do `CoreKitSync` do iOS 0.1.13.
+  `SyncSubject`, `PullBatch`, `PushOutcome`, `SyncState`, `ConflictPolicy`, `Outbox`/`PendingChange` (o `payload` é o
+  texto que o app codifica; no iOS, `Data`), `SyncEngine` (as mesmas regras e os mesmos testes) e `SyncWork`
+  (`enqueueNow`, `enqueuePeriodic`, `cancel`, e `SyncEngine.runAsWork()` para o Worker do app). O envio só foi provado
+  contra dublês: o primeiro app com servidor é o primeiro uso real.
+
 ## 0.1.11 - 2026-11-17
 
 - `core`: blocos de cache para o assunto "online" (o dado é do servidor e só faz sentido com ele), vindos do Homer e
