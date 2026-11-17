@@ -55,7 +55,14 @@ public class FakeBillingGateway(
         return true
     }
 
-    override suspend fun purchase(activity: Activity, product: ProProduct): BillingUpdate = nextPurchase
+    /** O `obfuscatedAccountId` de cada compra, em ordem (`null` quando não veio). */
+    public val purchaseAccountIds: MutableList<String?> = mutableListOf()
+
+    override suspend fun purchase(activity: Activity, product: ProProduct, obfuscatedAccountId: String?): BillingUpdate {
+        purchaseAccountIds += obfuscatedAccountId
+
+        return nextPurchase
+    }
 
     override fun setOutOfFlowListener(listener: suspend (BillingUpdate) -> Unit) {
         outOfFlow = listener

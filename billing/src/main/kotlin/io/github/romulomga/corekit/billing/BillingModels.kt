@@ -31,6 +31,9 @@ public enum class EntitlementKind(public val analyticsName: String) {
     }
 }
 
+/** A ordem dos planos à venda: do mais barato (padrão) ou como o app os listou. Gêmeo do `ProductOrder` do iOS. */
+public enum class ProductOrder { BY_PRICE, AS_PLANNED }
+
 /** O carregamento dos produtos, para o paywall mostrar carregando, erro com "tentar de novo" ou os planos. */
 public enum class ProductsState {
     LOADING,

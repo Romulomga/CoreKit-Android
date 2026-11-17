@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.1.9 - 2026-11-17
+
+Gêmeos do CoreKit iOS 0.1.10, com o comportamento de antes como padrão:
+
+- `core`: `CollectionPolicy.shouldCollect(…, debugBuildsCollect)`, para um app cujos testadores usam build de debug.
+- `billing`: `ProStore.purchase(activity, product, obfuscatedAccountId)` liga a compra à conta do app (gêmeo do
+  `appAccountToken`); `BillingGateway.purchase` ganhou o parâmetro e o `FakeBillingGateway` registra
+  `purchaseAccountIds`. `ProStore(productOrder = ProductOrder.AS_PLANNED)` mantém a ordem dos planos do app.
+
+Ficam só no iOS, por não existirem aqui: vários observadores do `NavigationDiagnostics`, chaves padrão do `ReviewGate`
+(aqui ele não guarda nada), CloudKit, e o período de carência (a Play devolve a assinatura em carência como comprada, e o
+`EntitlementKind` daqui não carrega validade).
+
 ## 0.1.8 - 2026-11-17
 
 - `network` (novo módulo, OkHttp 5): a parte genérica da rede do Homer Android, gêmea do `CoreKitNetwork` do CoreKit iOS

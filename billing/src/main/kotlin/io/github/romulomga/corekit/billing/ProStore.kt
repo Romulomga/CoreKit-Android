@@ -68,7 +68,8 @@ public class ProStore(
     private val plans: List<ProPlan>,
     private val memory: EntitlementMemory,
     private val observer: ProStoreObserver = ProStoreObserver.None,
-    private val resolveTimeout: Duration = 3.seconds
+    private val resolveTimeout: Duration = 3.seconds,
+    private val productOrder: ProductOrder = ProductOrder.BY_PRICE
 ) : Entitlement {
     private val _state = MutableStateFlow(EntitlementState.UNKNOWN)
     override val state: StateFlow<EntitlementState> = _state.asStateFlow()
@@ -140,7 +141,7 @@ public class ProStore(
 
             val answer = gateway.queryProducts(plans)
 
-            if (answer.products.isNotEmpty()) _products.value = answer.products.sortedBy { it.priceMicros }
+            if (answer.products.isNotEmpty()) _products.value = ordered(answer.products)
 
             _productsState.value = if (_products.value.isNotEmpty()) ProductsState.LOADED else ProductsState.FAILED
             answer.failure?.let { observer.onProductsLoadFailed(it.reason) }
@@ -154,11 +155,28 @@ public class ProStore(
         if (_productsState.value == ProductsState.FAILED) loadProducts()
     }
 
-    /** Abre a folha da Play e devolve o desfecho. O analytics da compra é do app, em cima do [PurchaseOutcome]. */
-    public suspend fun purchase(activity: Activity, product: ProProduct): PurchaseOutcome {
+    /**
+     * Abre a folha da Play e devolve o desfecho. O analytics da compra é do app, em cima do [PurchaseOutcome].
+     *
+     * [obfuscatedAccountId] liga a compra à conta do app (um app com login e servidor), que a recebe nas notificações da
+     * Play; gêmeo do `appAccountToken` do iOS. Nunca o e-mail nem o id do banco em claro: um valor opaco do usuário.
+     */
+    public suspend fun purchase(activity: Activity, product: ProProduct, obfuscatedAccountId: String? = null): PurchaseOutcome {
         observer.onPurchaseLaunching(product)
 
-        return settle(gateway.purchase(activity, product))
+        return settle(gateway.purchase(activity, product, obfuscatedAccountId))
+    }
+
+    private fun ordered(loaded: List<ProProduct>): List<ProProduct> = when (productOrder) {
+        ProductOrder.BY_PRICE -> loaded.sortedBy { it.priceMicros }
+
+        ProductOrder.AS_PLANNED -> loaded.sortedBy { product ->
+            plans.indexOfFirst { it.productId == product.plan.productId }.takeIf {
+                it >=
+                    0
+            }
+                ?: Int.MAX_VALUE
+        }
     }
 
     /** `false` se a Play não respondeu de verdade: aí não dá para dizer que não há compras. */

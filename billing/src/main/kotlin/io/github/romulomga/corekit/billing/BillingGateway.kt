@@ -17,7 +17,7 @@ public interface BillingGateway {
     public suspend fun acknowledge(purchase: PlayPurchase): Boolean
 
     /** Abre a folha de compra e suspende até a Play responder. */
-    public suspend fun purchase(activity: Activity, product: ProProduct): BillingUpdate
+    public suspend fun purchase(activity: Activity, product: ProProduct, obfuscatedAccountId: String? = null): BillingUpdate
 
     /**
      * Atualizações que chegam sem uma compra em andamento neste processo: a compra pendente que caiu, ou a compra cujo

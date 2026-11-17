@@ -22,4 +22,10 @@ class CollectionPolicyTest {
         assertFalse(CollectionPolicy.shouldCollect(isDebugBuild = true, isAutomatedRun = true, debugOptIn = true))
         assertFalse(CollectionPolicy.shouldCollect(isDebugBuild = false, isAutomatedRun = true, debugOptIn = true))
     }
+
+    @Test
+    fun `an app can let its debug builds collect, but never an automated run`() {
+        assertTrue(CollectionPolicy.shouldCollect(isDebugBuild = true, debugBuildsCollect = true))
+        assertFalse(CollectionPolicy.shouldCollect(isDebugBuild = true, isAutomatedRun = true, debugBuildsCollect = true))
+    }
 }

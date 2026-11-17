@@ -124,10 +124,18 @@ public object CollectionPolicy {
      * [debugOptIn] é o pedido explícito de quem desenvolve para um build de debug coletar, para conferir os eventos (o
      * `--analytics-debug` do iOS). Com o Firebase, passe `FirebaseMonitoring.isDebugViewEnabled`: os eventos vão só
      * para o DebugView e ficam fora dos relatórios. A rodada automatizada nunca coleta, nem com ele.
+     *
+     * [debugBuildsCollect] faz todo build de debug coletar sem pedido (um app cujos testadores usam debug), como o
+     * `CollectionPolicy(debugBuildsCollect:)` do iOS.
      */
-    public fun shouldCollect(isDebugBuild: Boolean, isAutomatedRun: Boolean = false, debugOptIn: Boolean = false): Boolean = when {
+    public fun shouldCollect(
+        isDebugBuild: Boolean,
+        isAutomatedRun: Boolean = false,
+        debugOptIn: Boolean = false,
+        debugBuildsCollect: Boolean = false
+    ): Boolean = when {
         isAutomatedRun -> false
-        isDebugBuild -> debugOptIn
+        isDebugBuild -> debugBuildsCollect || debugOptIn
         else -> true
     }
 }

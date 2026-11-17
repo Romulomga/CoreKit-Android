@@ -130,7 +130,7 @@ public class PlayBillingGateway(context: Context, private val scope: CoroutineSc
         return result.responseCode == BillingResponseCode.OK
     }
 
-    override suspend fun purchase(activity: Activity, product: ProProduct): BillingUpdate {
+    override suspend fun purchase(activity: Activity, product: ProProduct, obfuscatedAccountId: String?): BillingUpdate {
         val found = details[product.plan.productId] ?: return BillingUpdate(BillingUpdateCode.ERROR, debugMessage = "product not loaded")
 
         if (!connect()) return BillingUpdate(BillingUpdateCode.ERROR, debugMessage = "billing unavailable")
@@ -139,7 +139,10 @@ public class PlayBillingGateway(context: Context, private val scope: CoroutineSc
 
         product.offerToken?.let(productParams::setOfferToken)
 
-        val params = BillingFlowParams.newBuilder().setProductDetailsParamsList(listOf(productParams.build())).build()
+        val params = BillingFlowParams.newBuilder()
+            .setProductDetailsParamsList(listOf(productParams.build()))
+            .apply { obfuscatedAccountId?.let(::setObfuscatedAccountId) }
+            .build()
         val flow = CompletableDeferred<BillingUpdate>()
 
         pendingFlow.set(flow)

@@ -457,4 +457,32 @@ class ProStoreTest {
             keptWithoutAnswer++
         }
     }
+
+    @Test
+    fun `the account id reaches the purchase`() = runTest {
+        val store = store()
+
+        store.start()
+        store.purchase(Activity(), product(yearly), obfuscatedAccountId = "user-7f3a")
+        store.purchase(Activity(), product(yearly))
+
+        assertEquals(listOf("user-7f3a", null), gateway.purchaseAccountIds)
+    }
+
+    @Test
+    fun `an app can keep its own plan order`() = runTest {
+        val cheapLifetime = ProProduct(lifetime, "R$ 9,90", 9_900_000, "BRL")
+        val dearYearly = ProProduct(yearly, "R$ 49,90", 49_900_000, "BRL")
+
+        gateway.products = listOf(cheapLifetime, dearYearly)
+
+        val byPrice = store()
+        val asPlanned = ProStore(gateway, plans, memory, observer, productOrder = ProductOrder.AS_PLANNED)
+
+        byPrice.loadProducts()
+        asPlanned.loadProducts()
+
+        assertEquals(listOf(lifetime, yearly), byPrice.products.value.map { it.plan })
+        assertEquals(listOf(yearly, lifetime), asPlanned.products.value.map { it.plan })
+    }
 }
