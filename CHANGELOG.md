@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.1.8 - 2026-11-17
+
+- `network` (novo módulo, OkHttp 5): a parte genérica da rede do Homer Android, gêmea do `CoreKitNetwork` do CoreKit iOS
+  0.1.9. O que era fixo no Homer virou escolha do app, com o comportamento dele como exemplo: o cabeçalho e o prefixo do
+  token e a regra de quais rotas o levam (`AuthPolicy`), a política de retry (`RetryPolicy`, padrão igual ao do iOS),
+  os segmentos de URL mascarados (`UrlRedaction`), os cabeçalhos apagados do log e a tradução de erro do `ApiCaller`.
+  O cabeçalho de "não repetir" passou a se chamar `X-CoreKit-No-Retry`. Fica no app o que é de um servidor só:
+  envelopes de resposta, a renovação do token, uploads.
+- Regra nova no `CLAUDE.md`: API pública e pontos de extensão se avaliam pelo que um app qualquer precisaria, não pelo
+  que os apps de hoje usam.
+
 ## 0.1.7 - 2026-11-17
 
 - `core`: a chave do usuário ("Enviar estatísticas" nos Ajustes). `AnalyticsSink.setCollectionEnabled` (padrão: nada;

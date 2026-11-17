@@ -68,12 +68,20 @@ right is stored (`EntitlementMemory` over the app's own keys), purchase analytic
 
 ## Conventions
 
+- **Public API is judged by what any app would need, not by what today's apps use** (owner, 2026-11-17). CoreKit
+  serves apps that don't exist yet: an extension point (a interface the app implements, a policy it passes, a logger it
+  routes) stays public even if no current app plugs into it. Nothing an app should choose is hard-coded (launch
+  arguments, keys, order, names, header names): it is a parameter with today's behaviour as the default. A large new
+  feature (subscription tiers, consumables, promotional offers) enters when the first app needs it, but the current
+  design must not block it. Internal stays internal only when it is plumbing nobody outside would replace.
 - `explicitApi()` everywhere; KDoc in pt-BR explaining the *why* (the bug the piece prevents), like DSKit-Android.
 - Nothing app-specific: no product ids, strings, event names or package names of an app.
 - Every piece ships with a test that fails without it (double tap saves once, draft survives a new handle, recreation
   does not count again).
 - Blank line between logical blocks. No comments that restate the code.
-- A new piece enters only when at least two apps need it; otherwise it stays in the app.
+- A new piece enters only when at least two apps need it; otherwise it stays in the app. Exception asked by the owner
+  (2026-11-17): the `network` module (the generic part of Homer's `core/network`) entered with Homer alone, twin of
+  iOS's `CoreKitNetwork`.
 
 ## Verify
 

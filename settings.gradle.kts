@@ -40,4 +40,5 @@ include(
     ":firebase",
     ":review",
     ":database",
+    ":network",
 )

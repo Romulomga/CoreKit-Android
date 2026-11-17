@@ -22,6 +22,11 @@ tem o mesmo nome e a mesma regra nas duas.
   `core`, com a coleta desligada fora do build de loja), `FirebaseMonitoring.isDebugViewEnabled`.
 - `review`: `StoreReview.request` (In-App Review); a trava de frequência `ReviewGate` fica no `core`.
 - `database`: `KeepCorruptDatabaseFactory`, para o Room não deixar o Android apagar um banco corrompido.
+- `network`: OkHttp, gêmeo do `CoreKitNetwork` do iOS. `AuthInterceptor` (token lido a cada request, no cabeçalho e
+  com o prefixo que o app escolhe, pela `AuthPolicy` do app), `RetryInterceptor` com `RetryPolicy` (só leitura por
+  padrão; `NO_RETRY` tira um GET), `ConnectivityInterceptor` + `AndroidNetworkMonitor` (nada sai sem rede),
+  `redactedHttpLogging` + `UrlRedaction` (log sem credencial, sem query e sem os trechos de URL que o app marca como
+  dado) e `ApiCaller` (o limite entre o transporte e o erro do app, com o logout central e o cancelamento intacto).
 
 O `core` também traz `AnalyticsSink`, `UserSwitchSink` (a chave "Enviar estatísticas" e o erro sem mensagem), `PurchaseRevenue`, `CollectionPolicy` e `ReviewGate`.
 
