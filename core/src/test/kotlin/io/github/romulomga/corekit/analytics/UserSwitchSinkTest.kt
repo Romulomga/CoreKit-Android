@@ -68,6 +68,46 @@ class UserSwitchSinkTest {
         assertEquals(listOf(false), switches)
         assertEquals(listOf(false), other.switches)
     }
+
+    @Test
+    fun `the user and the crash trail go out while the switch is on`() {
+        val sink = UserSwitchSink(recorded, enabled = true)
+
+        sink.setUserId("user-7f3a")
+        sink.setCrashKey("plan", "pro")
+        sink.addBreadcrumb("abriu o editor")
+        sink.setUserId(null)
+
+        assertEquals(listOf("user-7f3a", null), recorded.userIds)
+        assertEquals(mapOf("plan" to "pro"), recorded.crashKeys)
+        assertEquals(listOf("abriu o editor"), recorded.breadcrumbs)
+    }
+
+    /** A sessão restaurada com a chave desligada: o id chega quando ela volta a ligar, e nada mais é reenviado. */
+    @Test
+    fun `an id given while switched off reaches the service when it comes back on`() {
+        val sink = UserSwitchSink(recorded, enabled = false)
+
+        sink.setUserId("user-9b21")
+        sink.setCrashKey("plan", "free")
+
+        assertTrue(recorded.userIds.isEmpty())
+
+        sink.setCollectionEnabled(true)
+
+        assertEquals(listOf<String?>("user-9b21"), recorded.userIds)
+        assertTrue(recorded.crashKeys.isEmpty())
+    }
+
+    @Test
+    fun `the composite hands the user to every sink`() {
+        val other = RecordingSink()
+
+        CompositeAnalyticsSink(listOf(recorded, other)).setUserId("user-7f3a")
+
+        assertEquals(listOf<String?>("user-7f3a"), recorded.userIds)
+        assertEquals(listOf<String?>("user-7f3a"), other.userIds)
+    }
 }
 
 private class RecordingSink : AnalyticsSink {
@@ -94,5 +134,21 @@ private class RecordingSink : AnalyticsSink {
 
     override fun setCollectionEnabled(enabled: Boolean) {
         switches += enabled
+    }
+
+    val userIds = mutableListOf<String?>()
+    val crashKeys = mutableMapOf<String, String>()
+    val breadcrumbs = mutableListOf<String>()
+
+    override fun setUserId(id: String?) {
+        userIds += id
+    }
+
+    override fun setCrashKey(key: String, value: String) {
+        crashKeys[key] = value
+    }
+
+    override fun addBreadcrumb(message: String) {
+        breadcrumbs += message
     }
 }

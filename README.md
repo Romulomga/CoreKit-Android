@@ -18,6 +18,8 @@ tem o mesmo nome e a mesma regra nas duas.
 - `billing`: Play Billing. `ProStore` (o direito ao Pro com o último valor confirmado guardado e o estado "ainda não
   sei"; `force(kind)` para os builds de teste), `ProProduct.chargedAtPurchaseCents` (o que a compra cobra na hora),
   `PlayBillingGateway`, `FakeBillingGateway`.
+- `mixpanel`: `MixpanelMonitoring.start` e `MixpanelAnalyticsSink` (gêmeo do `CoreKitMixpanel` do iOS), atrás da
+  chave do usuário; junto do Firebase, num `CompositeAnalyticsSink`.
 - `firebase`: `FirebaseMonitoring.start` e `FirebaseAnalyticsSink` (Analytics + Crashlytics atrás do `AnalyticsSink` do
   `core`, com a coleta desligada fora do build de loja), `FirebaseMonitoring.isDebugViewEnabled`.
 - `review`: `StoreReview.request` (In-App Review); a trava de frequência `ReviewGate` fica no `core`.
@@ -28,7 +30,8 @@ tem o mesmo nome e a mesma regra nas duas.
   `redactedHttpLogging` + `UrlRedaction` (log sem credencial, sem query e sem os trechos de URL que o app marca como
   dado) e `ApiCaller` (o limite entre o transporte e o erro do app, com o logout central e o cancelamento intacto).
 
-O `core` também traz `AnalyticsSink`, `UserSwitchSink` (a chave "Enviar estatísticas" e o erro sem mensagem), `PurchaseRevenue`, `CollectionPolicy` e `ReviewGate`.
+O `core` também traz `AnalyticsSink` (com `setUserId` para app com conta, `setCrashKey` e `addBreadcrumb` para o
+relatório de falha; nunca e-mail, nome nem o que o usuário digitou), `UserSwitchSink` (a chave "Enviar estatísticas" e o erro sem mensagem), `PurchaseRevenue`, `CollectionPolicy` e `ReviewGate`.
 
 Só no Android: `AppDispatchers`, `stateInScreen`, `GeneratedFiles`, `SystemZoneClock`, `SavedDraft`,
 `processScoped`, `TrackOnce`, `ObserveEvents` (recriação da Activity e morte do processo não existem no iOS).

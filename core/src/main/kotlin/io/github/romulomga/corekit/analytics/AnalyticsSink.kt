@@ -21,6 +21,19 @@ public interface AnalyticsSink {
      * SDK; quem não coleta ignora. Gêmeo do `setCollectionEnabled` do CoreKit iOS.
      */
     public fun setCollectionEnabled(enabled: Boolean): Unit = Unit
+
+    /**
+     * Quem usa o app, num app com conta: os serviços ligam eventos e falhas a esse id (o user ID do Firebase e do
+     * Crashlytics, o `identify` do Mixpanel); `null` no logout esquece (o `reset` do Mixpanel). Um id opaco do servidor
+     * do app, nunca e-mail, nome ou telefone. Gêmeo do `setUserID` do iOS.
+     */
+    public fun setUserId(id: String?): Unit = Unit
+
+    /** Um valor que vai em todo relatório de falha seguinte (o plano, uma flag). Nunca o que o usuário digitou. */
+    public fun setCrashKey(key: String, value: String): Unit = Unit
+
+    /** Uma linha na trilha que o próximo relatório de falha leva ("abriu o editor"). Nunca o que o usuário digitou. */
+    public fun addBreadcrumb(message: String): Unit = Unit
 }
 
 /**
@@ -63,6 +76,12 @@ public class CompositeAnalyticsSink(private val sinks: List<AnalyticsSink>) : An
     override fun logPurchase(purchase: PurchaseRevenue): Unit = sinks.forEach { it.logPurchase(purchase) }
 
     override fun setCollectionEnabled(enabled: Boolean): Unit = sinks.forEach { it.setCollectionEnabled(enabled) }
+
+    override fun setUserId(id: String?): Unit = sinks.forEach { it.setUserId(id) }
+
+    override fun setCrashKey(key: String, value: String): Unit = sinks.forEach { it.setCrashKey(key, value) }
+
+    override fun addBreadcrumb(message: String): Unit = sinks.forEach { it.addBreadcrumb(message) }
 }
 
 /**
@@ -76,6 +95,10 @@ public class UserSwitchSink(private val delegate: AnalyticsSink, enabled: Boolea
     @Volatile
     public var isEnabled: Boolean = enabled
         private set
+
+    /** O último id dado, entregue ao destino quando a chave volta a ligar: o app pode restaurar a sessão com ela desligada. */
+    @Volatile
+    private var userId: String? = null
 
     override fun log(name: String, parameters: Map<String, Any>) {
         if (isEnabled) delegate.log(name, parameters)
@@ -97,11 +120,27 @@ public class UserSwitchSink(private val delegate: AnalyticsSink, enabled: Boolea
         if (isEnabled) delegate.logPurchase(purchase)
     }
 
+    override fun setUserId(id: String?) {
+        userId = id
+
+        if (isEnabled) delegate.setUserId(id)
+    }
+
+    override fun setCrashKey(key: String, value: String) {
+        if (isEnabled) delegate.setCrashKey(key, value)
+    }
+
+    override fun addBreadcrumb(message: String) {
+        if (isEnabled) delegate.addBreadcrumb(message)
+    }
+
     override fun setCollectionEnabled(enabled: Boolean) {
         if (enabled == isEnabled) return
 
         isEnabled = enabled
         switchCollection(enabled)
+
+        if (enabled) userId?.let(delegate::setUserId)
     }
 }
 

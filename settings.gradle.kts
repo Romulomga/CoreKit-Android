@@ -41,4 +41,5 @@ include(
     ":review",
     ":database",
     ":network",
+    ":mixpanel",
 )

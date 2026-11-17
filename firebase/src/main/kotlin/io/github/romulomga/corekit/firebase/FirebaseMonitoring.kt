@@ -78,6 +78,16 @@ public class FirebaseAnalyticsSink(context: Context) : AnalyticsSink {
 
     override fun logPurchase(purchase: PurchaseRevenue): Unit =
         analytics.logEvent(FirebaseAnalytics.Event.PURCHASE, purchaseParameters(purchase))
+
+    /** O Crashlytics não tem "esquecer": id vazio é o logout dele. */
+    override fun setUserId(id: String?) {
+        analytics.setUserId(id)
+        FirebaseCrashlytics.getInstance().setUserId(id.orEmpty())
+    }
+
+    override fun setCrashKey(key: String, value: String): Unit = FirebaseCrashlytics.getInstance().setCustomKey(key, value)
+
+    override fun addBreadcrumb(message: String): Unit = FirebaseCrashlytics.getInstance().log(message)
 }
 
 /**

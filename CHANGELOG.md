@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.1.10 - 2026-11-17
+
+- `core`: `AnalyticsSink.setUserId` (quem usa o app, num app com conta; `null` no logout), `setCrashKey` e
+  `addBreadcrumb` (o que vai no próximo relatório de falha), com padrão vazio. O `CompositeAnalyticsSink` repassa, e o
+  `UserSwitchSink` guarda o último id e o entrega quando a chave volta a ligar. Gêmeos do CoreKit iOS 0.1.11.
+- `firebase`: user ID no Analytics e no Crashlytics, chaves e trilha no Crashlytics.
+- `mixpanel` (novo módulo, Mixpanel Android 8.12): `MixpanelMonitoring.start(context, token, collect, userEnabled)`
+  devolve o destino atrás da chave do usuário (opt-out do SDK desligada, opt-in religada, nada sai com ela desligada
+  na abertura); `identify`/`reset` pelo `setUserId`. Gêmeo do `CoreKitMixpanel` do iOS.
+
 ## 0.1.9 - 2026-11-17
 
 Gêmeos do CoreKit iOS 0.1.10, com o comportamento de antes como padrão:
