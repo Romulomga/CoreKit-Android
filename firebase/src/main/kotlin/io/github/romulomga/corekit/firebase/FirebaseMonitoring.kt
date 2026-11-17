@@ -9,6 +9,7 @@ import com.google.firebase.crashlytics.FirebaseCrashlytics
 import io.github.romulomga.corekit.analytics.AnalyticsSink
 import io.github.romulomga.corekit.analytics.NoopAnalyticsSink
 import io.github.romulomga.corekit.analytics.PurchaseRevenue
+import io.github.romulomga.corekit.analytics.UserSwitchSink
 
 /** A partida do Firebase Analytics + Crashlytics com a regra de coleta num lugar só. */
 public object FirebaseMonitoring {
@@ -16,14 +17,23 @@ public object FirebaseMonitoring {
      * O destino dos eventos para este processo. Sem `google-services.json` (o Firebase não iniciou) ou com [collect]
      * `false`, devolve o destino nulo e desliga a coleta dos dois SDKs: o manifesto pode desligá-la antes de o app
      * abrir, e isto vale para o resto do processo. Calcule [collect] com o `CollectionPolicy`.
+     *
+     * [userEnabled] é a chave "Enviar estatísticas" que o app guarda: desligada, nada sai do aparelho desde a abertura.
+     * O destino devolvido é um `UserSwitchSink`: `setCollectionEnabled` liga e desliga os dois SDKs depois, e o erro
+     * vai sem a mensagem.
      */
-    public fun start(context: Context, collect: Boolean): AnalyticsSink {
+    public fun start(context: Context, collect: Boolean, userEnabled: Boolean = true): AnalyticsSink {
         if (FirebaseApp.getApps(context).isEmpty()) return NoopAnalyticsSink
 
-        FirebaseAnalytics.getInstance(context).setAnalyticsCollectionEnabled(collect)
-        FirebaseCrashlytics.getInstance().isCrashlyticsCollectionEnabled = collect
+        val analytics = FirebaseAnalytics.getInstance(context)
+        val switchCollection = { enabled: Boolean ->
+            analytics.setAnalyticsCollectionEnabled(enabled)
+            FirebaseCrashlytics.getInstance().isCrashlyticsCollectionEnabled = enabled
+        }
 
-        return if (collect) FirebaseAnalyticsSink(context) else NoopAnalyticsSink
+        switchCollection(collect && userEnabled)
+
+        return if (collect) UserSwitchSink(FirebaseAnalyticsSink(context), userEnabled, switchCollection) else NoopAnalyticsSink
     }
 
     /**

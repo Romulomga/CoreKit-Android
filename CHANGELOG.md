@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.1.7 - 2026-11-17
+
+- `core`: a chave do usuário ("Enviar estatísticas" nos Ajustes). `AnalyticsSink.setCollectionEnabled` (padrão: nada;
+  o `CompositeAnalyticsSink` repassa) e `UserSwitchSink`, que envolve um destino: repassa enquanto a chave está ligada,
+  nada enquanto está desligada, e avisa o SDK a cada virada. Um erro vai só com a classe e a pilha, sem a mensagem
+  (`Throwable.withoutMessage()`), que pode citar o que o usuário digitou. Gêmeo do `Analytics.setCollectionEnabled`
+  do CoreKit iOS 0.1.8.
+- `firebase`: `FirebaseMonitoring.start(context, collect, userEnabled = true)` devolve o `FirebaseAnalyticsSink`
+  dentro de um `UserSwitchSink` ligado à coleta do Firebase Analytics e do Crashlytics. Com a chave desligada na
+  abertura, nada sai do aparelho. Acréscimo: a chamada de antes continua igual.
+
 ## 0.1.6 - 2026-11-16
 
 - `compose`: `LaunchedOnce` guarda a marca de "já carregou" no `ViewModelStoreOwner` (o da entrada, com o

@@ -23,7 +23,7 @@ tem o mesmo nome e a mesma regra nas duas.
 - `review`: `StoreReview.request` (In-App Review); a trava de frequência `ReviewGate` fica no `core`.
 - `database`: `KeepCorruptDatabaseFactory`, para o Room não deixar o Android apagar um banco corrompido.
 
-O `core` também traz `AnalyticsSink`, `PurchaseRevenue`, `CollectionPolicy` e `ReviewGate`.
+O `core` também traz `AnalyticsSink`, `UserSwitchSink` (a chave "Enviar estatísticas" e o erro sem mensagem), `PurchaseRevenue`, `CollectionPolicy` e `ReviewGate`.
 
 Só no Android: `AppDispatchers`, `stateInScreen`, `GeneratedFiles`, `SystemZoneClock`, `SavedDraft`,
 `processScoped`, `TrackOnce`, `ObserveEvents` (recriação da Activity e morte do processo não existem no iOS).
@@ -153,7 +153,8 @@ val collect = CollectionPolicy.shouldCollect(
     isDebugBuild = BuildConfig.DEBUG,
     debugOptIn = BuildConfig.DEBUG && FirebaseMonitoring.isDebugViewEnabled(context)
 )
-val sink = FirebaseMonitoring.start(context, collect)
+val sink = FirebaseMonitoring.start(context, collect, userEnabled = settings.analyticsEnabled)
+// Ajustes: sink.setCollectionEnabled(enabled), e o app guarda a escolha
 ```
 
 ## Verificação
