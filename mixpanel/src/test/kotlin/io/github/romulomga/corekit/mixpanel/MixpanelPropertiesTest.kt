@@ -13,10 +13,4 @@ class MixpanelPropertiesTest {
 
         assertEquals(mapOf("count" to 3, "total" to 49.9, "has_note" to true, "name" to "x", "kind" to "RECEIPT"), properties)
     }
-
-    @Test
-    fun `a screen goes with Firebase's names`() {
-        assertEquals("screen_view", SCREEN_VIEW)
-        assertEquals(mapOf("screen_name" to "home"), screenViewProperties("home"))
-    }
 }

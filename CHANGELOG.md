@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.14 - 2026-11-18
+
+- `mixpanel`: `MixpanelMonitoring.start(..., screenEvent:)` e `MixpanelAnalyticsSink(mixpanel, screenEvent)` recebem o
+  formato do evento de tela (`MixpanelScreenEvent`: o nome do evento e a chave do nome da tela). O padrão continua
+  `screen_view` com `screen_name`; um app com relatórios num formato antigo passa o dele. Gêmeo do CoreKit iOS 0.1.15.
+
 ## 0.1.13 - 2026-11-17
 
 - Correção do motor de sync: um `sync()` (puxar para atualizar) que entrava numa rodada que só enviava (`pushPending`,
