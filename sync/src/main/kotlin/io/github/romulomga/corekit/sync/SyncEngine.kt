@@ -76,6 +76,9 @@ public class SyncEngine<R : SyncedRecord, F>(
     /** Uma gravação local durante uma rodada: a rodada manda a fila mais uma vez antes de terminar. */
     private var pushAgain = false
 
+    /** Se a rodada a caminho lê: um [sync] que entra numa rodada que só envia pede a leitura. */
+    private var runReads = false
+
     /** Sobe no [reset]: uma rodada da sessão anterior termina sem gravar. */
     private var epoch = 0
 
@@ -91,7 +94,13 @@ public class SyncEngine<R : SyncedRecord, F>(
     // Gatilhos
 
     /** Manda, depois lê. Quem chama durante uma rodada espera por ela. A falha é aviso. */
-    public suspend fun sync(): F? = (running ?: start(pulling = true)).awaitOutcome()
+    public suspend fun sync(): F? {
+        val current = running ?: return start(pulling = true).awaitOutcome()
+
+        runReads = true
+
+        return current.awaitOutcome()
+    }
 
     /** Abrir uma tela: sincroniza quando a cópia é mais velha que [maxAge], ou nunca foi lida. */
     public suspend fun syncIfStale(maxAge: Duration) {
@@ -146,6 +155,7 @@ public class SyncEngine<R : SyncedRecord, F>(
         retrying = null
         failuresInARow = 0
         pushAgain = false
+        runReads = false
 
         outbox.removeAll(subject.name)
         subject.resetState()
@@ -159,11 +169,12 @@ public class SyncEngine<R : SyncedRecord, F>(
         retrying?.cancel()
         retrying = null
         state.update { it.copy(isSyncing = true) }
+        runReads = pulling
 
         val epoch = epoch
 
         // Preguiçoso: guardado antes de rodar, porque no main imediato o corpo pode terminar dentro do `start()`.
-        val task = scope.async(start = CoroutineStart.LAZY) { run(pulling, epoch) }
+        val task = scope.async(start = CoroutineStart.LAZY) { run(epoch) }
 
         running = task
         task.start()
@@ -171,16 +182,24 @@ public class SyncEngine<R : SyncedRecord, F>(
         return task
     }
 
-    private suspend fun run(pulling: Boolean, epoch: Int): F? {
+    private suspend fun run(epoch: Int): F? {
         val failure: F? = try {
             sendOutbox(epoch)
 
-            if (pulling) pull(epoch)
+            var didRead = false
 
-            // Uma gravação local durante a rodada vai antes de ela terminar.
-            while (pushAgain && epoch == this.epoch) {
-                pushAgain = false
-                sendOutbox(epoch)
+            // Uma gravação local durante a rodada vai antes de ela terminar, e um `sync()` que entrou numa rodada que
+            // só enviava ainda lê.
+            while (epoch == this.epoch) {
+                if (pushAgain) {
+                    pushAgain = false
+                    sendOutbox(epoch)
+                } else if (runReads && !didRead) {
+                    didRead = true
+                    pull(epoch)
+                } else {
+                    break
+                }
             }
 
             null

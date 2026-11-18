@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.13 - 2026-11-17
+
+- Correção do motor de sync: um `sync()` (puxar para atualizar) que entrava numa rodada que só enviava (`pushPending`,
+  logo depois de uma gravação local) voltava sem ler. Agora a rodada lê antes de terminar. Mesma correção no CoreKit iOS 0.1.14.
+
 ## 0.1.12 - 2026-11-17
 
 - `sync` (novo módulo, WorkManager 2.11): o sync de um assunto offline-first, gêmeo do `CoreKitSync` do iOS 0.1.13.

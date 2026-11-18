@@ -100,6 +100,7 @@ class FakeSubject : SyncSubject<Row> {
     val rows = mutableMapOf<String, Row>()
 
     val pullGate = Gate()
+    val pushGate = Gate()
     val pulls = ArrayDeque<PullBatch<Row>>()
     var pullFailure: Exception? = null
     val pullCursors = mutableListOf<String?>()
@@ -136,6 +137,7 @@ class FakeSubject : SyncSubject<Row> {
     override suspend fun push(change: PendingChange): PushOutcome {
         pushed += change
         events += "push ${change.entityId}"
+        pushGate.pass()
 
         return pushAnswer(change)
     }

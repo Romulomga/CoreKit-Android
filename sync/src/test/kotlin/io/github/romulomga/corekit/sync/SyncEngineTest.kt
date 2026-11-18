@@ -97,6 +97,22 @@ class SyncEngineTest {
         assertTrue(outbox.changes.isEmpty())
     }
 
+    /** Puxar logo depois de uma gravação local entra na rodada que só envia: mesmo assim lê. */
+    @Test
+    fun aSyncThatJoinsARunThatOnlySendsStillReads() = runTest {
+        outbox.queue("a", at = 1)
+        subject.pushGate.hold()
+        val engine = engine()
+        val pushing = eagerBackground().async { engine.pushPending() }
+        val syncing = eagerBackground().async { engine.sync() }
+
+        subject.pushGate.release()
+        pushing.await()
+        syncing.await()
+
+        assertEquals(listOf("push a", "pull"), subject.events)
+    }
+
     // Leitura
 
     /** Um registro com mudança esperando fica com a versão local: a mudança vai primeiro e o servidor decide. */
