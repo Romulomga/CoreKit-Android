@@ -12,8 +12,11 @@ import kotlinx.coroutines.flow.MutableStateFlow
 /** O que uma página pede ao servidor: o [offset] (as linhas já carregadas) nos endpoints offset/limit, o [number] (de 1) nos que contam páginas. */
 public data class PageRequest(val offset: Int, val number: Int)
 
-/** Uma página como o servidor respondeu; [hasMore] é a regra do endpoint (`total`, ou uma página menor que o limite). */
-public data class Page<out T>(val items: List<T>, val hasMore: Boolean)
+/**
+ * Uma página como o servidor respondeu; [hasMore] é a regra do endpoint (`total`, ou uma página menor que o limite).
+ * [total] é o tamanho da lista inteira quando o endpoint diz (offset/limit com contagem), nulo quando não diz.
+ */
+public data class Page<out T>(val items: List<T>, val hasMore: Boolean, val total: Int? = null)
 
 /** Uma lista paginada como o servidor deu por último, sem ids repetidos. */
 public data class PagedList<out T, out F>(
@@ -22,7 +25,9 @@ public data class PagedList<out T, out F>(
     val status: LoadStatus<F> = LoadStatus.Idle,
     val isLoadingMore: Boolean = false,
     /** Páginas somadas desde o último recomeço: a próxima é `pages + 1`. */
-    val pages: Int = 0
+    val pages: Int = 0,
+    /** O tamanho da lista inteira como o servidor disse por último ([Page.total]), nulo quando o endpoint não diz. */
+    val total: Int? = null
 )
 
 /**
@@ -44,6 +49,9 @@ public class PagedResource<K, T, F>(
 
     /** Por lista: sobe a cada recomeço, então uma página pedida para a lista substituída é descartada. */
     private val generations = mutableMapOf<K, Int>()
+
+    /** O que o último recomeço de cada lista que chegou respondeu (nulo dentro: carregou), para um refresh que se juntou a um recomeço trocado no caminho. */
+    private val outcomes = mutableMapOf<K, Outcome<F>>()
     private var epoch = 0
 
     public val lists: Map<K, PagedList<T, F>> get() = slice.get()
@@ -60,7 +68,11 @@ public class PagedResource<K, T, F>(
         startRestart(key)
     }
 
-    /** Puxar para atualizar e "Tentar de novo": junta-se ao recomeço a caminho. As linhas na tela ficam até a nova primeira página. */
+    /**
+     * Puxar para atualizar e "Tentar de novo": junta-se ao recomeço a caminho. As linhas na tela ficam até a nova primeira
+     * página. Um recomeço juntado aqui pode ser trocado no caminho (uma gravação, a busca mudou): quem chamou recebe a
+     * resposta do que decidiu a lista.
+     */
     public suspend fun refresh(key: K): F? {
         var task = restarts[key] ?: startRestart(key)
         var generation = generation(key)
@@ -71,7 +83,7 @@ public class PagedResource<K, T, F>(
 
             if (epoch != this.epoch || generation == generation(key)) return outcome
 
-            task = restarts[key] ?: return outcome
+            task = restarts[key] ?: return outcomes[key]?.failure
             generation = generation(key)
         }
     }
@@ -112,6 +124,38 @@ public class PagedResource<K, T, F>(
         lists.filterValues { list -> list.items.any { id(it) == showing } }.keys.forEach(::invalidate)
     }
 
+    /**
+     * Linhas que uma gravação confirmada tirou da lista (excluídas, movidas para outra): o total acompanha e a lista se
+     * completa. Com linhas sobrando e mais no servidor, vem a próxima página (a linha perto do fim que a pede já
+     * apareceu); esvaziada com mais no servidor, a primeira página é lida de novo sob o esqueleto, e o vazio só aparece
+     * quando o servidor diz. Para endpoints offset/limit: um que conta páginas pularia as linhas que subiram. Falso
+     * quando nenhum dos ids estava lá. Gêmeo do `removeItems` do iOS.
+     */
+    public fun removeItems(ids: Set<Any?>, from: K): Boolean {
+        val current = list(from)
+        val left = current.items.filterNot { id(it) in ids }
+        val removed = current.items.size - left.size
+
+        if (removed == 0) return false
+
+        val total = current.total?.let { maxOf(it - removed, left.size) }
+
+        edit(from) { it.copy(items = left, total = total) }
+
+        val moreOnServer = total?.let { it > 0 } ?: current.hasMore
+
+        if (left.isEmpty()) {
+            if (moreOnServer && restarts[from] == null) {
+                edit(from) { it.copy(status = LoadStatus.Loading) }
+                startRestart(from)
+            }
+        } else if (current.hasMore && nextPages[from] == null && restarts[from] == null) {
+            startNextPage(from)
+        }
+
+        return true
+    }
+
     /** Uma linha mudada por uma gravação que o servidor confirmou, em toda lista que a mostra. */
     public fun updateItem(itemId: Any?, change: (T) -> T) {
         slice.update { lists ->
@@ -141,6 +185,7 @@ public class PagedResource<K, T, F>(
         (restarts.values + nextPages.values).forEach { it.cancel() }
         restarts.clear()
         nextPages.clear()
+        outcomes.clear()
         slice.update { emptyMap() }
     }
 
@@ -152,8 +197,10 @@ public class PagedResource<K, T, F>(
 
     private fun startRestart(key: K): Deferred<F?> {
         nextPages.remove(key)?.cancel()
-        restarts[key]?.cancel()
 
+        // Cancelada só depois que a nova está guardada: quem espera a velha acorda na hora (num despachante imediato) e
+        // precisa achar a nova para se juntar a ela.
+        val previous = restarts[key]
         val generation = generation(key) + 1
         val epoch = epoch
         val before = list(key).status
@@ -169,6 +216,7 @@ public class PagedResource<K, T, F>(
         val task = scope.async(start = CoroutineStart.LAZY) { fetchFirstPage(key, generation, epoch, before) }
 
         restarts[key] = task
+        previous?.cancel()
         task.start()
 
         return task
@@ -182,7 +230,10 @@ public class PagedResource<K, T, F>(
 
             if (!isCurrent(key, generation, epoch)) return null
 
-            edit(key) { PagedList(items = unique(page.items), hasMore = page.hasMore, status = LoadStatus.Loaded, pages = 1) }
+            edit(key) {
+                PagedList(items = unique(page.items), hasMore = page.hasMore, status = LoadStatus.Loaded, pages = 1, total = page.total)
+            }
+            outcomes[key] = Outcome(null)
 
             return null
         } catch (error: CancellationException) {
@@ -207,6 +258,7 @@ public class PagedResource<K, T, F>(
             edit(key) {
                 it.copy(status = if (it.items.isEmpty() && before != LoadStatus.Loaded) LoadStatus.Failed(failure) else LoadStatus.Loaded)
             }
+            outcomes[key] = Outcome(failure)
 
             return failure
         } finally {
@@ -246,8 +298,8 @@ public class PagedResource<K, T, F>(
                 list.copy(
                     items = list.items + unique(page.items.filterNot { id(it) in known }),
                     hasMore = page.hasMore,
-                    pages =
-                        list.pages + 1
+                    pages = list.pages + 1,
+                    total = page.total ?: list.total
                 )
             }
 
@@ -271,6 +323,9 @@ public class PagedResource<K, T, F>(
         slice.update { lists -> lists + (key to change(lists[key] ?: PagedList())) }
     }
 }
+
+/** O que um recomeço respondeu: [failure] nulo, carregou. */
+private data class Outcome<out F>(val failure: F?)
 
 /** O pedaço de uma lista só ([SingleKey]), guardada no snapshot como um [PagedList] simples. */
 public fun <S, T, F> MutableStateFlow<S>.singleList(

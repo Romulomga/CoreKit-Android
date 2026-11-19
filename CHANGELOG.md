@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.1.16 - 2026-11-19
+
+- `PagedResource`: o `Page` e o `PagedList` ganham `total` (opcional; `Page(items, hasMore)` continua valendo) e chega
+  o `removeItems(ids, from)`: linhas que uma gravação confirmada tirou da lista saem, o total acompanha e a lista se
+  completa (a próxima página, se o servidor tem mais; a primeira de novo sob o esqueleto, se esvaziou e o servidor
+  ainda tem). Para endpoints offset/limit. Vem do `MyPostsRepository` do Homer (QA 26/09).
+- Muda o `refresh(key)`: quem juntou uma recarga trocada no caminho recebe o resultado da que decidiu a lista (decisão
+  do dono, 19/11). No Android, o recomeço velho agora é cancelado só depois que o novo está guardado: quem esperava o
+  velho acordava na hora, antes do novo, e devolvia `null`.
+- Gêmeo do CoreKit iOS 0.1.20.
+
 ## 0.1.15 - 2026-11-18
 
 - `KeyedResource.reload(key)` e `PagedResource.reload(key)` (e o `reload()` de chave única): o valor (ou as linhas) da

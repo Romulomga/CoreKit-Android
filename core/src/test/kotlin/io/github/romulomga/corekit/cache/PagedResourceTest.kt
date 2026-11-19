@@ -265,6 +265,94 @@ class PagedResourceTest {
         assertEquals(1, resource.list("list").pages)
     }
 
+    // O total, linhas tiradas, e um refresh juntado a um recomeço trocado no caminho
+
+    @Test
+    fun theTotalFollowsTheServerAndKeepsWhenAPageDoesNotSayIt() = runTest {
+        val resource = resource()
+
+        server.returns(Page((0 until 3).map { Row(it) }, hasMore = true, total = 7))
+        resource.refresh("list")
+
+        assertEquals(7, resource.list("list").total)
+
+        server.returns(page(3, 3, hasMore = true))
+        resource.loadMore("list")
+
+        assertEquals("uma página que não diz mantém o último total", 7, resource.list("list").total)
+    }
+
+    /** QA 26/09 (Homer): excluir 15 de 162 publicações inativas mostrava "nenhuma publicação". */
+    @Test
+    fun aListEmptiedByAWriteReadsTheServerAgainUnderTheSkeleton() = runTest {
+        val resource = resource()
+
+        server.returns(Page((0 until 3).map { Row(it) }, hasMore = true, total = 10))
+        resource.refresh("list")
+        server.gate.hold()
+        server.returns(Page((3 until 6).map { Row(it) }, hasMore = true, total = 7))
+
+        assertTrue(resource.removeItems(setOf(0, 1, 2), from = "list"))
+        assertTrue(resource.list("list").items.isEmpty())
+        assertEquals("o esqueleto, nunca o vazio", LoadStatus.Loading, resource.list("list").status)
+        assertEquals(7, resource.list("list").total)
+
+        server.gate.release()
+        advanceUntilIdle()
+
+        assertEquals(listOf(3, 4, 5), resource.list("list").items.map { it.id })
+        assertEquals(PageRequest(offset = 0, number = 1), server.calls.last())
+    }
+
+    @Test
+    fun rowsTakenOutBringTheNextPageWhenTheServerHasMore() = runTest {
+        val resource = resource()
+
+        server.returns(Page((0 until 3).map { Row(it) }, hasMore = true, total = 6))
+        resource.refresh("list")
+        server.returns(Page((3 until 6).map { Row(it) }, hasMore = false, total = 5))
+
+        assertTrue(resource.removeItems(setOf(1), from = "list"))
+        advanceUntilIdle()
+
+        assertEquals(listOf(0, 2, 3, 4, 5), resource.list("list").items.map { it.id })
+        assertEquals("o offset são as linhas que ficaram", PageRequest(offset = 2, number = 2), server.calls.last())
+        assertEquals(5, resource.list("list").total)
+    }
+
+    @Test
+    fun rowsThatWereNotThereChangeNothing() = runTest {
+        val resource = resource()
+
+        server.returns(Page((0 until 3).map { Row(it) }, hasMore = false, total = 3))
+        resource.refresh("list")
+
+        assertFalse(resource.removeItems(setOf(9), from = "list"))
+        assertTrue(resource.removeItems(setOf(0, 1, 2), from = "list"))
+        assertEquals("esvaziada sem mais no servidor: o vazio", LoadStatus.Loaded, resource.list("list").status)
+        assertEquals(0, resource.list("list").total)
+        assertEquals(1, server.count)
+    }
+
+    /** Um puxar juntado a um recomeço que uma gravação trocou, e a troca chegou antes: diz o que decidiu a lista. */
+    @Test
+    fun aRefreshSaysWhatTheRestartThatReplacedItsAnswered() = runTest {
+        val resource = resource()
+
+        server.returns(page(0, 3, hasMore = false))
+        resource.refresh("list")
+        server.gate.hold()
+
+        val pulling = eagerBackground().async { resource.refresh("list") }
+
+        server.fails(TestFailure.Offline)
+        resource.invalidate("list")
+        server.gate.release()
+        advanceUntilIdle()
+
+        assertEquals(TestFailure.Offline, pulling.await())
+    }
+
     @Test
     fun theEndOfTheSessionEmptiesTheListsAndDropsAnswersOnTheirWay() = runTest {
         val resource = resource()
