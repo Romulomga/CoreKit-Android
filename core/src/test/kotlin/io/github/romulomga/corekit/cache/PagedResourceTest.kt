@@ -243,6 +243,28 @@ class PagedResourceTest {
         assertTrue(resource.list("following").items[1].isFollowing)
     }
 
+    /** Uma abertura que não pode mostrar o guardado: as linhas saem na hora, e a próxima página a caminho nunca pousa. */
+    @Test
+    fun aReloadDropsTheRowsAndThePagesOnTheirWay() = runTest {
+        val resource = resource()
+
+        resource.refresh("list")
+        server.gate.hold()
+        val nextPage = eagerBackground().async { resource.loadMore("list") }
+        server.returns(page(10, 2, hasMore = false))
+        resource.reload("list")
+
+        assertTrue("nada guardado na tela", resource.list("list").items.isEmpty())
+        assertEquals(LoadStatus.Loading, resource.list("list").status)
+
+        server.gate.release()
+        advanceUntilIdle()
+        nextPage.await()
+
+        assertEquals(listOf(10, 11), resource.list("list").items.map { it.id })
+        assertEquals(1, resource.list("list").pages)
+    }
+
     @Test
     fun theEndOfTheSessionEmptiesTheListsAndDropsAnswersOnTheirWay() = runTest {
         val resource = resource()

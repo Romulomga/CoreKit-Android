@@ -208,6 +208,40 @@ class KeyedResourceTest {
 
     // Fim da sessão
 
+    /** Uma abertura que não pode mostrar o guardado: o valor sai na hora, e a resposta da busca a caminho nunca pousa. */
+    @Test
+    fun aReloadDropsTheValueAndTheFetchOnItsWay() = runTest {
+        val resource = resource()
+
+        resource.refresh(1)
+        server.gate.hold()
+        val before = eagerBackground().async { resource.refresh(1) }
+        server.answers { "new $it" }
+        resource.reload(1)
+
+        assertNull("nada guardado na tela", resource.entry(1).value)
+        assertEquals(LoadStatus.Loading, resource.entry(1).status)
+
+        server.gate.release()
+        advanceUntilIdle()
+        before.await()
+
+        assertEquals(Loadable.loaded("new 1"), resource.entry(1))
+    }
+
+    @Test
+    fun aReloadThatFailsShowsTheErrorNotTheOldValue() = runTest {
+        val resource = resource()
+
+        resource.refresh(1)
+        server.fails(TestFailure.Offline)
+        resource.reload(1)
+        advanceUntilIdle()
+
+        assertNull(resource.entry(1).value)
+        assertEquals(LoadStatus.Failed(TestFailure.Offline), resource.entry(1).status)
+    }
+
     @Test
     fun theEndOfTheSessionEmptiesTheCacheAndDropsAnswersOnTheirWay() = runTest {
         val resource = resource()

@@ -75,6 +75,17 @@ public class KeyedResource<K, V, F>(
         entries.keys.toList().forEach(::invalidate)
     }
 
+    /**
+     * Uma tela abre e não pode mostrar o guardado (app cujas telas sempre leem do zero ao abrir): o valor sai, a busca
+     * a caminho é largada e a chave é lida de novo sob o esqueleto. O [invalidate] é o silencioso, com o valor na tela.
+     * Gêmeo do `reload` do CoreKit iOS.
+     */
+    public fun reload(key: K) {
+        drop(key)
+        edit(key) { Loadable() }
+        start(key)
+    }
+
     /** O servidor confirmou uma gravação: o cache fica com o resultado, e uma leitura que saiu antes é descartada. */
     public fun set(key: K, value: V) {
         drop(key)
@@ -185,5 +196,7 @@ public fun <V, F> KeyedResource<SingleKey, V, F>.load(): Unit = load(SingleKey.V
 public suspend fun <V, F> KeyedResource<SingleKey, V, F>.refresh(): F? = refresh(SingleKey.VALUE)
 
 public fun <V, F> KeyedResource<SingleKey, V, F>.invalidate(): Unit = invalidate(SingleKey.VALUE)
+
+public fun <V, F> KeyedResource<SingleKey, V, F>.reload(): Unit = reload(SingleKey.VALUE)
 
 public fun <V, F> KeyedResource<SingleKey, V, F>.set(value: V): Unit = set(SingleKey.VALUE, value)

@@ -98,6 +98,15 @@ public class PagedResource<K, T, F>(
         lists.keys.toList().forEach(::invalidate)
     }
 
+    /**
+     * Uma tela abre e não pode mostrar o guardado: as linhas saem, as páginas a caminho são largadas e a primeira página
+     * é lida de novo sob o esqueleto. O [invalidate] é o silencioso, com as linhas na tela. Gêmeo do `reload` do iOS.
+     */
+    public fun reload(key: K) {
+        edit(key) { PagedList() }
+        startRestart(key)
+    }
+
     /** Toda lista que mostra a linha lê a primeira página de novo: uma gravação que pode ter chegado a mexeu. */
     public fun invalidateLists(showing: Any?) {
         lists.filterValues { list -> list.items.any { id(it) == showing } }.keys.forEach(::invalidate)

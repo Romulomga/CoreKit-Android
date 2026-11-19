@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.15 - 2026-11-18
+
+- `KeyedResource.reload(key)` e `PagedResource.reload(key)` (e o `reload()` de chave única): o valor (ou as linhas) da
+  chave sai, a busca a caminho é largada e a chave é lida de novo sob o esqueleto. É o par barulhento do `invalidate`,
+  que relê com o valor na tela. Para app cujas telas sempre leem do zero ao abrir (o Homer, decisão do dono, 18/11).
+  Só acrescenta. Gêmeo do CoreKit iOS 0.1.19.
+
 ## 0.1.14 - 2026-11-18
 
 - `mixpanel`: `MixpanelMonitoring.start(..., screenEvent:)` e `MixpanelAnalyticsSink(mixpanel, screenEvent)` recebem o
